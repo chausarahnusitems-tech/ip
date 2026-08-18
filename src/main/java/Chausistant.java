@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.ArrayList;
 
 /**
  * Entry point for the Chausistant chatbot application.
@@ -25,6 +26,8 @@ public class Chausistant {
         System.out.println(banner);
 
         final String EXIT_COMMAND = "bye";
+        final String LIST_COMMAND = "list";
+        ArrayList<String> todoList = new ArrayList<>();
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
@@ -34,9 +37,20 @@ public class Chausistant {
                 if (EXIT_COMMAND.equalsIgnoreCase(command)) {
                     System.out.println("Bye. Hope to see you again soon!");
                     break;
+                } else if (LIST_COMMAND.equals(command)) {
+                    //return the entire list
+                    if (todoList.size() == 0) {
+                        System.out.println("no tasks for now! go doomscroll");
+                    }
+
+                    for (int i = 1; i < todoList.size() + 1; i++) {
+                        System.out.println(i + ". " + todoList.get(i-1));
+                    }
+                    continue;
                 }
 
-                System.out.println(input + "\n---------------------");
+                todoList.add(input);
+                System.out.println("added: " + input);
             }
         }
     }
