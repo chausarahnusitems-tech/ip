@@ -1,4 +1,9 @@
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -15,6 +20,7 @@ public class Chausistant {
     private static final String MARK_COMMAND = "mark";
     private static final String UNMARK_COMMAND = "unmark";
     private static final String DELETE_COMMAND = "delete";
+    private static final Path SAVE_FILE = Path.of("data", "duke.txt");
 
     private enum Command {
         BYE("bye"),
@@ -38,7 +44,7 @@ public class Chausistant {
      * <p>The more specific task types inherit the common task state and
      * override {@link #printTask()} to include their own details.</p>
      */
-    private static class Task {
+    private abstract static class Task {
         private final String item;
         private boolean status;
 
@@ -59,9 +65,15 @@ public class Chausistant {
             return status ? "[X]" : "[ ]";
         }
 
-        String printTask() {
-            return getStatusMark() + " " + item;
+        /** Returns the task's completion status in the save-file format. */
+        protected String getSaveStatus() {
+            return status ? "1" : "0";
         }
+
+        abstract String printTask();
+
+        /** Converts this task into one line for the save file. */
+        abstract String toSaveFormat();
     }
 
     /** A task without a deadline or event timing details. */
@@ -73,6 +85,11 @@ public class Chausistant {
         @Override
         String printTask() {
             return "[T]" + getStatusMark() + " " + getItem();
+        }
+
+        @Override
+        String toSaveFormat() {
+            return "T | " + getSaveStatus() + " | " + getItem();
         }
     }
 
@@ -89,6 +106,11 @@ public class Chausistant {
         String printTask() {
             return "[D]" + getStatusMark() + " " + getItem()
                     + " (by: " + deadline + ")";
+        }
+
+        @Override
+        String toSaveFormat() {
+            return "D | " + getSaveStatus() + " | " + getItem() + " | " + deadline;
         }
     }
 
@@ -107,6 +129,11 @@ public class Chausistant {
         String printTask() {
             return "[E]" + getStatusMark() + " " + getItem()
                     + " (from: " + from + " to: " + to + ")";
+        }
+
+        @Override
+        String toSaveFormat() {
+            return "E | " + getSaveStatus() + " | " + getItem() + " | " + from + " | " + to;
         }
     }
 
@@ -205,10 +232,11 @@ public class Chausistant {
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
     private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
         task.setStatus(MARK_COMMAND.equals(action));
+        saveTasks(todoList);
         System.out.println(task.printTask());
     }
 
@@ -220,9 +248,10 @@ public class Chausistant {
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
     private static void deleteTask(String details, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(DELETE_COMMAND, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
+        saveTasks(todoList);
         System.out.println("Noted. I've removed this task:");
         System.out.println(removedTask.printTask());
         System.out.println("Now you have " + todoList.size() + " tasks in the list.");
@@ -238,6 +267,56 @@ public class Chausistant {
         for (int i = 0; i < todoList.size(); i++) {
             System.out.println((i + 1) + "." + todoList.get(i).printTask());
         }
+    }
+
+    /**
+     * Writes the complete current task list to the application's save file.
+     *
+     * <p>Writing the entire list after each change keeps the storage format simple.</p>
+     *
+     * @param todoList the task list to save
+     * @throws IOException if the data directory or save file cannot be written
+     */
+    private static void saveTasks(ArrayList<Task> todoList) throws IOException {
+        Files.createDirectories(SAVE_FILE.getParent());
+        List<String> savedTasks = todoList.stream().map(Task::toSaveFormat).toList();
+        Files.write(SAVE_FILE, savedTasks, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Reads previously saved tasks from the application's save file.
+     *
+     * @return the saved tasks, or an empty list when no save file exists yet
+     * @throws IOException if an existing save file cannot be read
+     */
+    private static ArrayList<Task> loadTasks() throws IOException {
+        ArrayList<Task> todoList = new ArrayList<>();
+        if (!Files.exists(SAVE_FILE)) {
+            return todoList;
+        }
+
+        for (String savedTask : Files.readAllLines(SAVE_FILE, StandardCharsets.UTF_8)) {
+            todoList.add(createTaskFromSaveFormat(savedTask));
+        }
+        return todoList;
+    }
+
+    /**
+     * Recreates a task from one valid line in the save-file format.
+     *
+     * @param savedTask one line previously produced by {@link Task#toSaveFormat()}
+     * @return the task represented by that line
+     */
+    private static Task createTaskFromSaveFormat(String savedTask) {
+        String[] fields = savedTask.split(" \\| ", -1);
+        Task task = switch (fields[0]) {
+            case "T" -> new TodoTask(fields[2]);
+            case "D" -> new DeadlineTask(fields[2], fields[3]);
+            case "E" -> new EventTask(fields[2], fields[3], fields[4]);
+            default -> throw new IllegalArgumentException("Unknown saved task type: " + fields[0]);
+        };
+        task.setStatus("1".equals(fields[1]));
+        return task;
     }
 
     /**
@@ -279,7 +358,7 @@ public class Chausistant {
      * @throws ChausistantException if the command cannot be completed
      */
     private static boolean processCommand(String command, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         String[] parts = command.split("\\s+", 2);
         String action = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";
@@ -313,6 +392,7 @@ public class Chausistant {
             case TODO, DEADLINE, EVENT -> {
                 Task taskItem = createTask(action, details);
                 todoList.add(taskItem);
+                saveTasks(todoList);
                 System.out.println("Got it. I've added this task:");
                 System.out.println(taskItem.printTask());
                 System.out.println("Now you have " + todoList.size() + " tasks in the list.");
@@ -342,6 +422,11 @@ public class Chausistant {
         System.out.println(banner);
 
         ArrayList<Task> todoList = new ArrayList<>();
+        try {
+            todoList = loadTasks();
+        } catch (IOException error) {
+            System.out.println("Oops! I could not load your tasks: " + error.getMessage());
+        }
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
@@ -358,6 +443,8 @@ public class Chausistant {
                     }
                 } catch (ChausistantException error) {
                     System.out.println("Oops! " + error.getMessage());
+                } catch (IOException error) {
+                    System.out.println("Oops! I could not save your tasks: " + error.getMessage());
                 }
             }
         }
