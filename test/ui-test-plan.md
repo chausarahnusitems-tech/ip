@@ -110,7 +110,7 @@ bye
 
 ```text
 Oops! The todo command needs a description.
-Oops! I don't know the command "blah".
+Oops! no one told me about this new command: "blah".
 Oops! Use: deadline <task> /by <date or time>.
 Oops! Use: event <task> /from <start> /to <end>.
 Got it. I've added this task:
@@ -160,7 +160,7 @@ Got it. I've added this task:
 [E][ ] club meeting (from: 2pm to: 3pm)
 Now you have 3 tasks in the list.
 Oops! Use: event <task> /from <start> /to <end>.
-Oops! I don't know the command "blah".
+Oops! no one told me about this new command: "blah".
 Here are the tasks in your list:
 1.[T][ ] read chapter
 2.[D][ ] plan trip (by: Friday)
@@ -236,5 +236,56 @@ Oops! The list command does not take extra text.
 Oops! The bye command does not take extra text.
 Here are the tasks in your list:
 1.[T][ ] buy milk
+Bye. Hope to see you again soon!
+```
+
+## Test case: Delete a task without corrupting the list
+
+Aim: Verify that deletion removes the requested task, renumbers the remaining tasks, and leaves the list unchanged after invalid delete commands.
+
+Match: contains
+
+### Inputs
+
+```text
+todo keep first
+deadline remove this /by tomorrow
+event keep last /from 2pm /to 3pm
+delete 2
+delete 0
+delete
+todo add after error
+delete two
+delete 4
+list
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[T][ ] keep first
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+[D][ ] remove this (by: tomorrow)
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+[E][ ] keep last (from: 2pm to: 3pm)
+Now you have 3 tasks in the list.
+Noted. I've removed this task:
+[D][ ] remove this (by: tomorrow)
+Now you have 2 tasks in the list.
+Oops! There is no task numbered 0.
+Oops! The delete command needs a task number.
+Got it. I've added this task:
+[T][ ] add after error
+Now you have 3 tasks in the list.
+Oops! A task number must be a whole number.
+Oops! There is no task numbered 4.
+Here are the tasks in your list:
+1.[T][ ] keep first
+2.[E][ ] keep last (from: 2pm to: 3pm)
+3.[T][ ] add after error
 Bye. Hope to see you again soon!
 ```

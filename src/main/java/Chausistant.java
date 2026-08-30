@@ -14,6 +14,7 @@ public class Chausistant {
     private static final String LIST_COMMAND = "list";
     private static final String MARK_COMMAND = "mark";
     private static final String UNMARK_COMMAND = "unmark";
+    private static final String DELETE_COMMAND = "delete";
 
     /**
      * Represents one task and whether it has been completed.
@@ -150,14 +151,15 @@ public class Chausistant {
     }
 
     /**
-     * Updates the completion status of the numbered task.
+     * Converts and validates a user-entered task number into an ArrayList index.
      *
-     * @param action either {@code mark} or {@code unmark}
+     * @param action the command that needs a task number
      * @param details the task number entered by the user
      * @param todoList the list containing the tasks
+     * @return the zero-based index of the requested task
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList)
+    private static int getTaskIndex(String action, String details, ArrayList<Task> todoList)
             throws ChausistantException {
         if (details.isBlank()) {
             throw new ChausistantException("The " + action + " command needs a task number.");
@@ -175,9 +177,39 @@ public class Chausistant {
             throw new ChausistantException("There is no task numbered " + taskNumber + ".");
         }
 
+        return taskIndex;
+    }
+
+    /**
+     * Updates the completion status of the numbered task.
+     *
+     * @param action either {@code mark} or {@code unmark}
+     * @param details the task number entered by the user
+     * @param todoList the list containing the tasks
+     * @throws ChausistantException if the task number is missing, invalid, or absent
+     */
+    private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList)
+            throws ChausistantException {
+        int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
         task.setStatus(MARK_COMMAND.equals(action));
         System.out.println(task.printTask());
+    }
+
+    /**
+     * Removes the numbered task and reports the task that was removed.
+     *
+     * @param details the task number entered by the user
+     * @param todoList the list containing the tasks
+     * @throws ChausistantException if the task number is missing, invalid, or absent
+     */
+    private static void deleteTask(String details, ArrayList<Task> todoList)
+            throws ChausistantException {
+        int taskIndex = getTaskIndex(DELETE_COMMAND, details, todoList);
+        Task removedTask = todoList.remove(taskIndex);
+        System.out.println("Noted. I've removed this task:");
+        System.out.println(removedTask.printTask());
+        System.out.println("Now you have " + todoList.size() + " tasks in the list.");
     }
 
     /** Displays every task currently stored in the task list. */
@@ -233,6 +265,11 @@ public class Chausistant {
 
         if (MARK_COMMAND.equals(action) || UNMARK_COMMAND.equals(action)) {
             updateTaskStatus(action, details, todoList);
+            return true;
+        }
+
+        if (DELETE_COMMAND.equals(action)) {
+            deleteTask(details, todoList);
             return true;
         }
 
