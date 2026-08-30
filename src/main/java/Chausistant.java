@@ -16,6 +16,22 @@ public class Chausistant {
     private static final String UNMARK_COMMAND = "unmark";
     private static final String DELETE_COMMAND = "delete";
 
+    private enum Command {
+        BYE("bye"),
+        LIST("list"),
+        MARK("mark"),
+        UNMARK("unmark"),
+        DELETE("delete"),
+        TODO("todo"),
+        DEADLINE("deadline"),
+        EVENT("event");
+
+        private final String keyword;
+
+        Command(String keyword) {
+            this.keyword = keyword;
+        }
+    }
     /**
      * Represents one task and whether it has been completed.
      *
@@ -238,6 +254,23 @@ public class Chausistant {
     }
 
     /**
+     * Validates the input string's command and deals with the exception
+     *
+     * @param input the user's action input
+     * @return the command if its a normal command
+     * @throws ChausistantException if the command doesnt exist
+     */
+    static Command fromInput(String input) throws ChausistantException {
+        for (Command command : Command.values()) {
+            if (command.keyword.equals(input)) {
+                return command;
+            }
+        }
+
+        throw new ChausistantException("Unknown command: " + input);
+    }
+
+    /**
      * Routes one user command to the appropriate task operation.
      *
      * @param command the user's trimmed input
@@ -251,38 +284,42 @@ public class Chausistant {
         String action = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";
 
-        if (EXIT_COMMAND.equals(action)) {
-            validateNoDetails(action, details);
-            System.out.println("Bye. Hope to see you again soon!");
-            return false;
-        }
+        Command validatedAction = fromInput(action);
 
-        if (LIST_COMMAND.equals(action)) {
-            validateNoDetails(action, details);
-            displayTasks(todoList);
-            return true;
-        }
+        switch (validatedAction) {
+            case BYE -> {
+                validateNoDetails(action, details);
+                System.out.println("Bye. Hope to see you again soon!");
+                return false;
+            }
 
-        if (MARK_COMMAND.equals(action) || UNMARK_COMMAND.equals(action)) {
-            updateTaskStatus(action, details, todoList);
-            return true;
-        }
+            case LIST -> {
+                validateNoDetails(action, details);
+                displayTasks(todoList);
+                return true;
+            }
 
-        if (DELETE_COMMAND.equals(action)) {
-            deleteTask(details, todoList);
-            return true;
-        }
+            case MARK, UNMARK -> {
+                updateTaskStatus(action, details, todoList);
+                return true;
+            }
 
-        if (action.equals("todo") || action.equals("deadline") || action.equals("event")) {
-            Task taskItem = createTask(action, details);
-            todoList.add(taskItem);
-            System.out.println("Got it. I've added this task:");
-            System.out.println(taskItem.printTask());
-            System.out.println("Now you have " + todoList.size() + " tasks in the list.");
-            return true;
-        }
 
-        throw new ChausistantException("no one told me about this new command: \"" + action + "\".");
+            case DELETE -> {
+                deleteTask(details, todoList);
+                return true;
+            }
+
+            case TODO, DEADLINE, EVENT -> {
+                Task taskItem = createTask(action, details);
+                todoList.add(taskItem);
+                System.out.println("Got it. I've added this task:");
+                System.out.println(taskItem.printTask());
+                System.out.println("Now you have " + todoList.size() + " tasks in the list.");
+                return true;
+            }
+        }
+        throw new IllegalStateException("Unhandled command: " + validatedAction);
     }
 
     public static void main(String[] args) {
