@@ -1,3 +1,5 @@
+package chausistant.command;
+
 /** Command that marks one task as completed. */
 public class MarkCommand extends StatusCommand {
 

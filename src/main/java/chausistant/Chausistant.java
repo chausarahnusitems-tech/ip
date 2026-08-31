@@ -1,3 +1,11 @@
+package chausistant;
+
+import chausistant.command.Command;
+import chausistant.exception.ChausistantException;
+import chausistant.parser.Parser;
+import chausistant.storage.Storage;
+import chausistant.task.TaskList;
+import chausistant.ui.Ui;
 import java.io.IOException;
 import java.nio.file.Path;
 

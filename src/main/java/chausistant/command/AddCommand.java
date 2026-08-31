@@ -1,3 +1,9 @@
+package chausistant.command;
+
+import chausistant.storage.Storage;
+import chausistant.task.Task;
+import chausistant.task.TaskList;
+import chausistant.ui.Ui;
 import java.io.IOException;
 
 /** Command that adds one already-validated task to the task list. */

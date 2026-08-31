@@ -1,3 +1,8 @@
+package chausistant.command;
+
+import chausistant.exception.ChausistantException;
+import chausistant.task.TaskList;
+
 /**
  * Shared validation for commands that operate on one numbered task.
  */
