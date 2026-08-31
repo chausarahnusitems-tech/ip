@@ -24,11 +24,6 @@ import java.util.regex.Pattern;
 
 public class Chausistant {
 
-    private static final String EXIT_COMMAND = "bye";
-    private static final String LIST_COMMAND = "list";
-    private static final String MARK_COMMAND = "mark";
-    private static final String UNMARK_COMMAND = "unmark";
-    private static final String DELETE_COMMAND = "delete";
     private static final Path SAVE_FILE = Path.of("data", "duke.txt");
     private static final LocalTime START_OF_DAY = LocalTime.MIDNIGHT;
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59);
@@ -283,37 +278,39 @@ public class Chausistant {
      * @return the newly created task
      * @throws ChausistantException if the command is missing or has invalid details
      */
-    private static Task createTask(String action, String details) throws ChausistantException {
+    private static Task createTask(Command action, String details) throws ChausistantException {
         if (details.isBlank()) {
             throw new ChausistantException(getTaskUsage(action));
         }
 
-        if (action.equals("todo")) {
-            return new TodoTask(details);
-        }
+        return switch (action) {
+            case TODO -> new TodoTask(details);
+            case DEADLINE -> createDeadlineTask(details);
+            case EVENT -> createEventTask(details);
+            default -> throw new IllegalArgumentException("Not a task command: " + action);
+        };
+    }
 
-        if (action.equals("deadline")) {
-            Matcher matcher = DEADLINE_PATTERN.matcher(details);
-            if (matcher.matches()) {
-                DateTimeDetails deadline = parseInputDateTime(matcher.group(2).strip(), END_OF_DAY);
-                return new DeadlineTask(matcher.group(1).strip(),
-                        deadline.getDateTime(), deadline.hasTime());
-            }
+    /** Creates a deadline task after validating its description and date details. */
+    private static DeadlineTask createDeadlineTask(String details) throws ChausistantException {
+        Matcher matcher = DEADLINE_PATTERN.matcher(details);
+        if (!matcher.matches()) {
             throw new ChausistantException(DEADLINE_USAGE);
         }
+        DateTimeDetails deadline = parseInputDateTime(matcher.group(2).strip(), END_OF_DAY);
+        return new DeadlineTask(matcher.group(1).strip(), deadline.getDateTime(), deadline.hasTime());
+    }
 
-        if (action.equals("event")) {
-            Matcher matcher = EVENT_PATTERN.matcher(details);
-            if (matcher.matches()) {
-                DateTimeDetails from = parseInputDateTime(matcher.group(2).strip(), START_OF_DAY);
-                DateTimeDetails to = parseInputDateTime(matcher.group(3).strip(), END_OF_DAY);
-                return new EventTask(matcher.group(1).strip(), from.getDateTime(), from.hasTime(),
-                        to.getDateTime(), to.hasTime());
-            }
+    /** Creates an event task after validating its description and date details. */
+    private static EventTask createEventTask(String details) throws ChausistantException {
+        Matcher matcher = EVENT_PATTERN.matcher(details);
+        if (!matcher.matches()) {
             throw new ChausistantException(EVENT_USAGE);
         }
-
-        throw new ChausistantException("I don't know the command \"" + action + "\".");
+        DateTimeDetails from = parseInputDateTime(matcher.group(2).strip(), START_OF_DAY);
+        DateTimeDetails to = parseInputDateTime(matcher.group(3).strip(), END_OF_DAY);
+        return new EventTask(matcher.group(1).strip(), from.getDateTime(), from.hasTime(),
+                to.getDateTime(), to.hasTime());
     }
 
     /**
@@ -341,11 +338,11 @@ public class Chausistant {
     }
 
     /** Returns the command template for a task-creation action. */
-    private static String getTaskUsage(String action) {
+    private static String getTaskUsage(Command action) {
         return switch (action) {
-            case "todo" -> TODO_USAGE;
-            case "deadline" -> DEADLINE_USAGE;
-            case "event" -> EVENT_USAGE;
+            case TODO -> TODO_USAGE;
+            case DEADLINE -> DEADLINE_USAGE;
+            case EVENT -> EVENT_USAGE;
             default -> throw new IllegalArgumentException("Unknown task action: " + action);
         };
     }
@@ -388,10 +385,10 @@ public class Chausistant {
      * @return the zero-based index of the requested task
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static int getTaskIndex(String action, String details, ArrayList<Task> todoList)
+    private static int getTaskIndex(Command action, String details, ArrayList<Task> todoList)
             throws ChausistantException {
         if (details.isBlank()) {
-            throw new ChausistantException("Use: " + action + " <task number>.");
+            throw new ChausistantException("Use: " + action.keyword + " <task number>.");
         }
 
         final int taskNumber;
@@ -417,12 +414,12 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList, Ui ui)
+    private static void updateTaskStatus(Command action, String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
         boolean wasCompleted = task.isCompleted();
-        task.setStatus(MARK_COMMAND.equals(action));
+        task.setStatus(action == Command.MARK);
         try {
             saveTasks(todoList);
         } catch (IOException error) {
@@ -441,7 +438,7 @@ public class Chausistant {
      */
     private static void deleteTask(String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
-        int taskIndex = getTaskIndex(DELETE_COMMAND, details, todoList);
+        int taskIndex = getTaskIndex(Command.DELETE, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
         try {
             saveTasks(todoList);
@@ -678,9 +675,9 @@ public class Chausistant {
      * @param details the text following that command
      * @throws ChausistantException if extra text was provided
      */
-    private static void validateNoDetails(String action, String details) throws ChausistantException {
+    private static void validateNoDetails(Command action, String details) throws ChausistantException {
         if (!details.isBlank()) {
-            throw new ChausistantException("Use: " + action + ".");
+            throw new ChausistantException("Use: " + action.keyword + ".");
         }
     }
 
@@ -726,26 +723,26 @@ public class Chausistant {
         }
 
         String[] parts = command.split("\\s+", 2);
-        String action = parts[0].toLowerCase(Locale.ROOT);
+        String actionText = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";
 
-        Command validatedAction = fromInput(action);
+        Command validatedAction = fromInput(actionText);
 
         switch (validatedAction) {
             case BYE -> {
-                validateNoDetails(action, details);
+                validateNoDetails(validatedAction, details);
                 ui.showGoodbye();
                 return false;
             }
 
             case LIST -> {
-                validateNoDetails(action, details);
+                validateNoDetails(validatedAction, details);
                 displayTasks(todoList, ui);
                 return true;
             }
 
             case MARK, UNMARK -> {
-                updateTaskStatus(action, details, todoList, ui);
+                updateTaskStatus(validatedAction, details, todoList, ui);
                 return true;
             }
 
@@ -756,7 +753,7 @@ public class Chausistant {
             }
 
             case TODO, DEADLINE, EVENT -> {
-                Task taskItem = createTask(action, details);
+                Task taskItem = createTask(validatedAction, details);
                 todoList.add(taskItem);
                 try {
                     saveTasks(todoList);
