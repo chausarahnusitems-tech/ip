@@ -4,12 +4,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
@@ -32,14 +34,25 @@ public class Chausistant {
             .appendPattern("d/M/uuuu HHmm")
             .toFormatter(Locale.ROOT)
             .withResolverStyle(ResolverStyle.STRICT);
+    private static final DateTimeFormatter INPUT_DATE_FORMATTER = new DateTimeFormatterBuilder()
+            .appendPattern("d/M/uuuu")
+            .toFormatter(Locale.ROOT)
+            .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter SAVE_DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("dd/MM/uuuu HHmm", Locale.ROOT);
     private static final DateTimeFormatter DISPLAY_DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("MMM d uuuu HHmm", Locale.ENGLISH);
+    private static final DateTimeFormatter DISPLAY_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("MMM d uuuu", Locale.ENGLISH);
     private static final Pattern DATE_TIME_SHAPE = Pattern.compile(
             "^\\d{1,2}/\\d{1,2}/\\d{4} \\d{4}$");
+    private static final Pattern DATE_SHAPE = Pattern.compile(
+            "^\\d{1,2}/\\d{1,2}/\\d{4}$");
     private static final String DATE_TIME_ERROR =
             "Use date/time format DD/MM/YYYY HHmm with a valid calendar date.";
+    private static final String DATE_ERROR =
+            "Use date format DD/MM/YYYY with a valid calendar date.";
+    private static final String WHAT_IS_ON_ERROR = "Use: what's on: <date>.";
 
     private enum Command {
         BYE("bye"),
@@ -125,6 +138,11 @@ public class Chausistant {
             this.deadline = deadline;
         }
 
+        /** Returns this deadline's date and time for filtering and sorting. */
+        LocalDateTime getDeadline() {
+            return deadline;
+        }
+
         @Override
         String printTask() {
             return "[D]" + getStatusMark() + " " + getItem()
@@ -147,6 +165,16 @@ public class Chausistant {
             super(item);
             this.from = from;
             this.to = to;
+        }
+
+        /** Returns the event start date and time for filtering and sorting. */
+        LocalDateTime getFrom() {
+            return from;
+        }
+
+        /** Returns the event end date and time for filtering. */
+        LocalDateTime getTo() {
+            return to;
         }
 
         @Override
@@ -208,6 +236,10 @@ public class Chausistant {
             "^(.+?)\\s+/from\\s+(.+?)\\s+/to\\s+(.+)$",
             Pattern.CASE_INSENSITIVE);
 
+    /** Matches the date supplied to the command that displays scheduled work. */
+    private static final Pattern WHAT_IS_ON_PATTERN = Pattern.compile(
+            "^what's\\s+on:\\s*(.*)$", Pattern.CASE_INSENSITIVE);
+
     /**
      * Creates a task after validating the details supplied for its task type.
      *
@@ -263,6 +295,25 @@ public class Chausistant {
             return LocalDateTime.parse(text, INPUT_DATE_TIME_FORMATTER);
         } catch (DateTimeParseException error) {
             throw new ChausistantException(DATE_TIME_ERROR);
+        }
+    }
+
+    /**
+     * Parses the date supplied to {@code what's on:}.
+     *
+     * @param text the date to parse
+     * @return the parsed calendar date
+     * @throws ChausistantException if the date shape or calendar value is invalid
+     */
+    private static LocalDate parseInputDate(String text) throws ChausistantException {
+        if (!DATE_SHAPE.matcher(text).matches()) {
+            throw new ChausistantException(DATE_ERROR);
+        }
+
+        try {
+            return LocalDate.parse(text, INPUT_DATE_FORMATTER);
+        } catch (DateTimeParseException error) {
+            throw new ChausistantException(DATE_ERROR);
         }
     }
 
@@ -350,6 +401,59 @@ public class Chausistant {
 
         for (int i = 0; i < todoList.size(); i++) {
             System.out.println((i + 1) + "." + todoList.get(i).printTask());
+        }
+    }
+
+    /**
+     * Displays events overlapping a date, followed by deadlines due that day.
+     *
+     * <p>Events are considered to be on every date touched by their interval.
+     * Each section is sorted by its relevant start or due time, and the divider
+     * keeps events visually separate from deadlines.</p>
+     *
+     * @param dateText the date entered after {@code what's on:}
+     * @param todoList the list of tasks to search
+     * @throws ChausistantException if the requested date is invalid
+     */
+    private static void displayTasksOnDate(String dateText, ArrayList<Task> todoList)
+            throws ChausistantException {
+        LocalDate date = parseInputDate(dateText);
+        ArrayList<EventTask> events = new ArrayList<>();
+        ArrayList<DeadlineTask> deadlines = new ArrayList<>();
+
+        for (Task task : todoList) {
+            if (task instanceof EventTask event
+                    && !event.getFrom().toLocalDate().isAfter(date)
+                    && !event.getTo().toLocalDate().isBefore(date)) {
+                events.add(event);
+            } else if (task instanceof DeadlineTask deadline
+                    && deadline.getDeadline().toLocalDate().equals(date)) {
+                deadlines.add(deadline);
+            }
+        }
+
+        events.sort(Comparator.comparing(EventTask::getFrom));
+        deadlines.sort(Comparator.comparing(DeadlineTask::getDeadline));
+
+        String displayDate = date.format(DISPLAY_DATE_FORMATTER);
+        System.out.println("Here are the events and deadlines on " + displayDate + ":");
+        System.out.println("Events:");
+        if (events.isEmpty()) {
+            System.out.println("No events on this date.");
+        } else {
+            for (EventTask event : events) {
+                System.out.println(event.printTask());
+            }
+        }
+
+        System.out.println("--------------------");
+        System.out.println("Deadlines:");
+        if (deadlines.isEmpty()) {
+            System.out.println("No deadlines on this date.");
+        } else {
+            for (DeadlineTask deadline : deadlines) {
+                System.out.println(deadline.printTask());
+            }
         }
     }
 
@@ -547,6 +651,16 @@ public class Chausistant {
      */
     private static boolean processCommand(String command, ArrayList<Task> todoList)
             throws ChausistantException, IOException {
+        Matcher whatIsOnMatcher = WHAT_IS_ON_PATTERN.matcher(command);
+        if (whatIsOnMatcher.matches()) {
+            displayTasksOnDate(whatIsOnMatcher.group(1).strip(), todoList);
+            return true;
+        }
+        if (command.length() >= 6 && command.regionMatches(true, 0, "what's", 0, 6)
+                && (command.length() == 6 || Character.isWhitespace(command.charAt(6)))) {
+            throw new ChausistantException(WHAT_IS_ON_ERROR);
+        }
+
         String[] parts = command.split("\\s+", 2);
         String action = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";

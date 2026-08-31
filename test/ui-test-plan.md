@@ -432,6 +432,96 @@ no tasks for now! go doomscroll
 Bye. Hope to see you again soon!
 ```
 
+## Test case: Show events and deadlines for a date in time order
+
+Aim: Verify that `what's on:` filters by date, sorts events and deadlines independently by time, and places events before the divider.
+
+Match: contains
+
+### Inputs
+
+```text
+event afternoon meeting /from 02/12/2019 1400 /to 02/12/2019 1600
+deadline late report /by 02/12/2019 1800
+event morning meeting /from 2/12/2019 0900 /to 2/12/2019 1000
+deadline early report /by 2/12/2019 0800
+what's on: 02/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Here are the events and deadlines on Dec 2 2019:
+Events:
+[E][ ] morning meeting (from: Dec 2 2019 0900 to: Dec 2 2019 1000)
+[E][ ] afternoon meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)
+--------------------
+Deadlines:
+[D][ ] early report (by: Dec 2 2019 0800)
+[D][ ] late report (by: Dec 2 2019 1800)
+Bye. Hope to see you again soon!
+```
+
+## Test case: Include events that overlap the requested date
+
+Aim: Verify that an event crossing midnight is shown on both dates covered by its interval, while an event outside the date is excluded.
+
+Match: contains
+
+### Inputs
+
+```text
+event overnight /from 31/12/2019 2300 /to 01/01/2020 0030
+event next evening /from 01/01/2020 1800 /to 01/01/2020 1900
+what's on: 01/01/2020
+bye
+```
+
+### Expected output
+
+```text
+Here are the events and deadlines on Jan 1 2020:
+Events:
+[E][ ] overnight (from: Dec 31 2019 2300 to: Jan 1 2020 0030)
+[E][ ] next evening (from: Jan 1 2020 1800 to: Jan 1 2020 1900)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
+## Test case: Handle dates with no matching tasks and invalid query dates
+
+Aim: Verify that an empty result is reported clearly and an invalid query date returns an error without stopping the chatbot.
+
+Match: contains
+
+### Inputs
+
+```text
+what's on
+what's on: 02/12/2019 extra
+what's on: 31/02/2019
+what's on: 02/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Oops! Use: what's on: <date>.
+Oops! Use date format DD/MM/YYYY with a valid calendar date.
+Oops! Use date format DD/MM/YYYY with a valid calendar date.
+Here are the events and deadlines on Dec 2 2019:
+Events:
+No events on this date.
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
 ## Test case: Start with an empty save file
 
 Aim: Verify that an empty save file is treated as an empty task list.
