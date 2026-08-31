@@ -35,14 +35,6 @@ public class Chausistant {
             .appendPattern("d/M/uuuu")
             .toFormatter(Locale.ROOT)
             .withResolverStyle(ResolverStyle.STRICT);
-    private static final DateTimeFormatter SAVE_DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("dd/MM/uuuu HHmm", Locale.ROOT);
-    private static final DateTimeFormatter SAVE_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ROOT);
-    private static final DateTimeFormatter DISPLAY_DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("MMM d uuuu HHmm", Locale.ENGLISH);
-    private static final DateTimeFormatter DISPLAY_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("MMM d uuuu", Locale.ENGLISH);
     private static final Pattern DATE_TIME_SHAPE = Pattern.compile(
             "^\\d{1,2}/\\d{1,2}/\\d{4} \\d{4}$");
     private static final Pattern DATE_SHAPE = Pattern.compile(
@@ -74,48 +66,6 @@ public class Chausistant {
             this.keyword = keyword;
         }
     }
-    /**
-     * Represents one task and whether it has been completed.
-     *
-     * <p>The more specific task types inherit the common task state and
-     * override {@link #printTask()} to include their own details.</p>
-     */
-    private abstract static class Task {
-        private final String item;
-        private boolean status;
-
-        Task(String item) {
-            this.item = item;
-            this.status = false;
-        }
-
-        void setStatus(boolean status) {
-            this.status = status;
-        }
-
-        boolean isCompleted() {
-            return status;
-        }
-
-        protected String getItem() {
-            return item;
-        }
-
-        protected String getStatusMark() {
-            return status ? "[X]" : "[ ]";
-        }
-
-        /** Returns the task's completion status in the save-file format. */
-        protected String getSaveStatus() {
-            return status ? "1" : "0";
-        }
-
-        abstract String printTask();
-
-        /** Converts this task into one line for the save file. */
-        abstract String toSaveFormat();
-    }
-
     /** Holds a parsed date and whether the user supplied a time for it. */
     private static class DateTimeDetails {
         private final LocalDateTime dateTime;
@@ -132,93 +82,6 @@ public class Chausistant {
 
         boolean hasTime() {
             return hasTime;
-        }
-    }
-
-    /** A task without a deadline or event timing details. */
-    private static class TodoTask extends Task {
-        TodoTask(String item) {
-            super(item);
-        }
-
-        @Override
-        String printTask() {
-            return "[T]" + getStatusMark() + " " + getItem();
-        }
-
-        @Override
-        String toSaveFormat() {
-            return formatSaveLine("T", getSaveStatus(), getItem());
-        }
-    }
-
-    /** A task that must be completed by a specified time or date. */
-    private static class DeadlineTask extends Task {
-        private final LocalDateTime deadline;
-        private final boolean hasDeadlineTime;
-
-        DeadlineTask(String item, LocalDateTime deadline, boolean hasDeadlineTime) {
-            super(item);
-            this.deadline = deadline;
-            this.hasDeadlineTime = hasDeadlineTime;
-        }
-
-        /** Returns this deadline's date and time for filtering and sorting. */
-        LocalDateTime getDeadline() {
-            return deadline;
-        }
-
-        @Override
-        String printTask() {
-            return "[D]" + getStatusMark() + " " + getItem()
-                    + " (by: " + formatDateTimeForDisplay(deadline, hasDeadlineTime) + ")";
-        }
-
-        @Override
-        String toSaveFormat() {
-            return formatSaveLine("D", getSaveStatus(), getItem(),
-                    formatDateTimeForSave(deadline, hasDeadlineTime));
-        }
-    }
-
-    /** A task that occurs during a specified time interval. */
-    private static class EventTask extends Task {
-        private final LocalDateTime from;
-        private final LocalDateTime to;
-        private final boolean hasFromTime;
-        private final boolean hasToTime;
-
-        EventTask(String item, LocalDateTime from, boolean hasFromTime,
-                  LocalDateTime to, boolean hasToTime) {
-            super(item);
-            this.from = from;
-            this.to = to;
-            this.hasFromTime = hasFromTime;
-            this.hasToTime = hasToTime;
-        }
-
-        /** Returns the event start date and time for filtering and sorting. */
-        LocalDateTime getFrom() {
-            return from;
-        }
-
-        /** Returns the event end date and time for filtering. */
-        LocalDateTime getTo() {
-            return to;
-        }
-
-        @Override
-        String printTask() {
-            return "[E]" + getStatusMark() + " " + getItem()
-                    + " (from: " + formatDateTimeForDisplay(from, hasFromTime)
-                    + " to: " + formatDateTimeForDisplay(to, hasToTime) + ")";
-        }
-
-        @Override
-        String toSaveFormat() {
-            return formatSaveLine("E", getSaveStatus(), getItem(),
-                    formatDateTimeForSave(from, hasFromTime),
-                    formatDateTimeForSave(to, hasToTime));
         }
     }
 
@@ -367,18 +230,8 @@ public class Chausistant {
         }
     }
 
-    /** Formats a date or date/time for the chatbot's user-facing output. */
-    private static String formatDateTimeForDisplay(LocalDateTime dateTime, boolean hasTime) {
-        return dateTime.format(hasTime ? DISPLAY_DATE_TIME_FORMATTER : DISPLAY_DATE_FORMATTER);
-    }
-
-    /** Formats a date or date/time for one unambiguous save-file field. */
-    private static String formatDateTimeForSave(LocalDateTime dateTime, boolean hasTime) {
-        return dateTime.format(hasTime ? SAVE_DATE_TIME_FORMATTER : SAVE_DATE_FORMATTER);
-    }
-
     /**
-     * Converts and validates a user-entered task number into an ArrayList index.
+     * Converts and validates a user-entered task number into a TaskList index.
      *
      * @param action the command that needs a task number
      * @param details the task number entered by the user
@@ -386,7 +239,7 @@ public class Chausistant {
      * @return the zero-based index of the requested task
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static int getTaskIndex(CommandType action, String details, ArrayList<Task> todoList)
+    private static int getTaskIndex(CommandType action, String details, TaskList todoList)
             throws ChausistantException {
         if (details.isBlank()) {
             throw new ChausistantException("Use: " + action.keyword + " <task number>.");
@@ -415,7 +268,7 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void updateTaskStatus(CommandType action, String details, ArrayList<Task> todoList, Ui ui)
+    private static void updateTaskStatus(CommandType action, String details, TaskList todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
@@ -437,7 +290,7 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void deleteTask(String details, ArrayList<Task> todoList, Ui ui)
+    private static void deleteTask(String details, TaskList todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(CommandType.DELETE, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
@@ -451,8 +304,8 @@ public class Chausistant {
     }
 
     /** Displays every task currently stored in the task list. */
-    private static void displayTasks(ArrayList<Task> todoList, Ui ui) {
-        ui.showTaskList(todoList.stream().map(Task::printTask).toList());
+    private static void displayTasks(TaskList todoList, Ui ui) {
+        ui.showTaskList(todoList.getTasks().stream().map(Task::printTask).toList());
     }
 
     /**
@@ -466,13 +319,13 @@ public class Chausistant {
      * @param todoList the list of tasks to search
      * @throws ChausistantException if the requested date is invalid
      */
-    private static void displayTasksOnDate(String dateText, ArrayList<Task> todoList, Ui ui)
+    private static void displayTasksOnDate(String dateText, TaskList todoList, Ui ui)
             throws ChausistantException {
         LocalDate date = parseInputDate(dateText);
         ArrayList<EventTask> events = new ArrayList<>();
         ArrayList<DeadlineTask> deadlines = new ArrayList<>();
 
-        for (Task task : todoList) {
+        for (Task task : todoList.getTasks()) {
             if (task instanceof EventTask event
                     && !event.getFrom().toLocalDate().isAfter(date)
                     && !event.getTo().toLocalDate().isBefore(date)) {
@@ -486,7 +339,7 @@ public class Chausistant {
         events.sort(Comparator.comparing(EventTask::getFrom));
         deadlines.sort(Comparator.comparing(DeadlineTask::getDeadline));
 
-        String displayDate = date.format(DISPLAY_DATE_FORMATTER);
+        String displayDate = Task.formatDateForDisplay(date);
         List<String> eventDetails = events.stream().map(EventTask::printTask).toList();
         List<String> deadlineDetails = deadlines.stream().map(DeadlineTask::printTask).toList();
         ui.showSchedule(displayDate, eventDetails, deadlineDetails);
@@ -500,10 +353,10 @@ public class Chausistant {
      * @param todoList the task list to save
      * @throws IOException if the data directory or save file cannot be written
      */
-    private static void saveTasks(ArrayList<Task> todoList) throws IOException {
+    private static void saveTasks(TaskList todoList) throws IOException {
         Path dataDirectory = SAVE_FILE.getParent();
         Files.createDirectories(dataDirectory);
-        List<String> savedTasks = todoList.stream().map(Task::toSaveFormat).toList();
+        List<String> savedTasks = todoList.getTasks().stream().map(Task::toSaveFormat).toList();
         Path temporaryFile = Files.createTempFile(dataDirectory, "duke-", ".tmp");
         try {
             Files.write(temporaryFile, savedTasks, StandardCharsets.UTF_8);
@@ -655,20 +508,6 @@ public class Chausistant {
         return fields;
     }
 
-    /** Escapes one field so it cannot be mistaken for a save-file separator. */
-    private static String escapeSaveField(String field) {
-        return field.replace("\\", "\\\\").replace("|", "\\|");
-    }
-
-    /** Formats fields as one task line for the save file. */
-    private static String formatSaveLine(String... fields) {
-        ArrayList<String> escapedFields = new ArrayList<>();
-        for (String field : fields) {
-            escapedFields.add(escapeSaveField(field));
-        }
-        return String.join(" | ", escapedFields);
-    }
-
     /**
      * Checks that a command that takes no details was entered on its own.
      *
@@ -707,7 +546,7 @@ public class Chausistant {
      * @return {@code false} when the program should exit; otherwise {@code true}
      * @throws ChausistantException if the command cannot be completed
      */
-    private static boolean processCommand(String command, ArrayList<Task> todoList, Ui ui)
+    private static boolean processCommand(String command, TaskList todoList, Ui ui)
             throws ChausistantException, IOException {
         Matcher whatIsOnMatcher = WHAT_IS_ON_PATTERN.matcher(command);
         if (whatIsOnMatcher.matches()) {
@@ -774,10 +613,10 @@ public class Chausistant {
         Ui ui = new Ui();
         ui.showWelcome();
 
-        ArrayList<Task> todoList = new ArrayList<>();
+        TaskList todoList = new TaskList();
         try {
             LoadedTasks loadedTasks = loadTasks();
-            todoList = loadedTasks.getTasks();
+            todoList = new TaskList(loadedTasks.getTasks());
             for (String warning : loadedTasks.getWarnings()) {
                 ui.showError(warning);
             }
