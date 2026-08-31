@@ -57,7 +57,8 @@ public class Chausistant {
     private static final String EVENT_USAGE =
             "Use: event <task> /from <date> [HHmm] /to <date> [HHmm].";
 
-    private enum Command {
+    /** Identifies the command keyword supplied at the input boundary. */
+    private enum CommandType {
         BYE("bye"),
         LIST("list"),
         MARK("mark"),
@@ -69,7 +70,7 @@ public class Chausistant {
 
         private final String keyword;
 
-        Command(String keyword) {
+        CommandType(String keyword) {
             this.keyword = keyword;
         }
     }
@@ -278,7 +279,7 @@ public class Chausistant {
      * @return the newly created task
      * @throws ChausistantException if the command is missing or has invalid details
      */
-    private static Task createTask(Command action, String details) throws ChausistantException {
+    private static Task createTask(CommandType action, String details) throws ChausistantException {
         if (details.isBlank()) {
             throw new ChausistantException(getTaskUsage(action));
         }
@@ -338,7 +339,7 @@ public class Chausistant {
     }
 
     /** Returns the command template for a task-creation action. */
-    private static String getTaskUsage(Command action) {
+    private static String getTaskUsage(CommandType action) {
         return switch (action) {
             case TODO -> TODO_USAGE;
             case DEADLINE -> DEADLINE_USAGE;
@@ -385,7 +386,7 @@ public class Chausistant {
      * @return the zero-based index of the requested task
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static int getTaskIndex(Command action, String details, ArrayList<Task> todoList)
+    private static int getTaskIndex(CommandType action, String details, ArrayList<Task> todoList)
             throws ChausistantException {
         if (details.isBlank()) {
             throw new ChausistantException("Use: " + action.keyword + " <task number>.");
@@ -414,12 +415,12 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void updateTaskStatus(Command action, String details, ArrayList<Task> todoList, Ui ui)
+    private static void updateTaskStatus(CommandType action, String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
         boolean wasCompleted = task.isCompleted();
-        task.setStatus(action == Command.MARK);
+        task.setStatus(action == CommandType.MARK);
         try {
             saveTasks(todoList);
         } catch (IOException error) {
@@ -438,7 +439,7 @@ public class Chausistant {
      */
     private static void deleteTask(String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
-        int taskIndex = getTaskIndex(Command.DELETE, details, todoList);
+        int taskIndex = getTaskIndex(CommandType.DELETE, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
         try {
             saveTasks(todoList);
@@ -675,7 +676,7 @@ public class Chausistant {
      * @param details the text following that command
      * @throws ChausistantException if extra text was provided
      */
-    private static void validateNoDetails(Command action, String details) throws ChausistantException {
+    private static void validateNoDetails(CommandType action, String details) throws ChausistantException {
         if (!details.isBlank()) {
             throw new ChausistantException("Use: " + action.keyword + ".");
         }
@@ -688,8 +689,8 @@ public class Chausistant {
      * @return the command if its a normal command
      * @throws ChausistantException if the command doesnt exist
      */
-    static Command fromInput(String input) throws ChausistantException {
-        for (Command command : Command.values()) {
+    static CommandType fromInput(String input) throws ChausistantException {
+        for (CommandType command : CommandType.values()) {
             if (command.keyword.equals(input)) {
                 return command;
             }
@@ -726,13 +727,14 @@ public class Chausistant {
         String actionText = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";
 
-        Command validatedAction = fromInput(actionText);
+        CommandType validatedAction = fromInput(actionText);
 
         switch (validatedAction) {
             case BYE -> {
                 validateNoDetails(validatedAction, details);
-                ui.showGoodbye();
-                return false;
+                Command exitCommand = new ExitCommand();
+                exitCommand.execute(ui);
+                return !exitCommand.isExit();
             }
 
             case LIST -> {
