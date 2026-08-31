@@ -40,14 +40,14 @@ Bye. Hope to see you again soon!
 
 ## Test case: Add a deadline with punctuation
 
-Aim: Verify that a deadline keeps its complete `/by` text, including punctuation and spaces.
+Aim: Verify that a deadline parses a date/time while preserving punctuation in its description.
 
 Match: contains
 
 ### Inputs
 
 ```text
-deadline do homework /by no idea :-p
+deadline do homework :-p /by 2/12/2019 1800
 bye
 ```
 
@@ -55,7 +55,7 @@ bye
 
 ```text
 Got it. I've added this task:
-[D][ ] do homework (by: no idea :-p)
+[D][ ] do homework :-p (by: Dec 2 2019 1800)
 Now you have 1 tasks in the list.
 Bye. Hope to see you again soon!
 ```
@@ -69,7 +69,7 @@ Match: contains
 ### Inputs
 
 ```text
-event project meeting /from Mon 2pm /to 4pm
+event project meeting /from 2/12/2019 1400 /to 2/12/2019 1600
 list
 mark 1
 bye
@@ -79,17 +79,17 @@ bye
 
 ```text
 Got it. I've added this task:
-[E][ ] project meeting (from: Mon 2pm to: 4pm)
+[E][ ] project meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)
 Now you have 1 tasks in the list.
 Here are the tasks in your list:
-1.[E][ ] project meeting (from: Mon 2pm to: 4pm)
-[E][X] project meeting (from: Mon 2pm to: 4pm)
+1.[E][ ] project meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)
+[E][X] project meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)
 Bye. Hope to see you again soon!
 ```
 
-## Test case: Handle invalid commands with ChausistantException
+## Test case: Handle invalid commands with helpful templates
 
-Aim: Verify that invalid user inputs show a clear error message and the program continues accepting commands.
+Aim: Verify that invalid user inputs show a command template when details are missing and the program continues accepting commands.
 
 Match: contains
 
@@ -113,19 +113,19 @@ bye
 ### Expected output
 
 ```text
-Oops! The todo command needs a description.
+Oops! Use: todo <task>.
 Oops! Unknown command: blah
-Oops! Use: deadline <task> /by <date or time>.
-Oops! Use: event <task> /from <start> /to <end>.
+Oops! Use: deadline <task> /by <date> [HHmm].
+Oops! Use: event <task> /from <date> [HHmm] /to <date> [HHmm].
 Got it. I've added this task:
 [T][ ] submit assignment
 Now you have 1 tasks in the list.
-Oops! The mark command needs a task number.
+Oops! Use: mark <task number>.
 Oops! A task number must be a whole number.
 Oops! There is no task numbered 2.
-Oops! The unmark command needs a task number.
-Oops! The list command does not take extra text.
-Oops! The bye command does not take extra text.
+Oops! Use: unmark <task number>.
+Oops! Use: list.
+Oops! Use: bye.
 Bye. Hope to see you again soon!
 ```
 
@@ -140,9 +140,9 @@ Match: contains
 ```text
 todo read chapter
 todo
-deadline plan trip /by Friday
+deadline plan trip /by 28/02/2020 0900
 deadline write report
-event club meeting /from 2pm /to 3pm
+event club meeting /from 2/03/2020 1400 /to 02/03/2020 1500
 event study session /from 4pm /to
 blah
 list
@@ -155,20 +155,20 @@ bye
 Got it. I've added this task:
 [T][ ] read chapter
 Now you have 1 tasks in the list.
-Oops! The todo command needs a description.
+Oops! Use: todo <task>.
 Got it. I've added this task:
-[D][ ] plan trip (by: Friday)
+[D][ ] plan trip (by: Feb 28 2020 0900)
 Now you have 2 tasks in the list.
-Oops! Use: deadline <task> /by <date or time>.
+Oops! Use: deadline <task> /by <date> [HHmm].
 Got it. I've added this task:
-[E][ ] club meeting (from: 2pm to: 3pm)
+[E][ ] club meeting (from: Mar 2 2020 1400 to: Mar 2 2020 1500)
 Now you have 3 tasks in the list.
-Oops! Use: event <task> /from <start> /to <end>.
+Oops! Use: event <task> /from <date> [HHmm] /to <date> [HHmm].
 Oops! Unknown command: blah
 Here are the tasks in your list:
 1.[T][ ] read chapter
-2.[D][ ] plan trip (by: Friday)
-3.[E][ ] club meeting (from: 2pm to: 3pm)
+2.[D][ ] plan trip (by: Feb 28 2020 0900)
+3.[E][ ] club meeting (from: Mar 2 2020 1400 to: Mar 2 2020 1500)
 Bye. Hope to see you again soon!
 ```
 
@@ -236,8 +236,8 @@ bye
 Got it. I've added this task:
 [T][ ] buy milk
 Now you have 1 tasks in the list.
-Oops! The list command does not take extra text.
-Oops! The bye command does not take extra text.
+Oops! Use: list.
+Oops! Use: bye.
 Here are the tasks in your list:
 1.[T][ ] buy milk
 Bye. Hope to see you again soon!
@@ -253,8 +253,8 @@ Match: contains
 
 ```text
 todo keep first
-deadline remove this /by tomorrow
-event keep last /from 2pm /to 3pm
+deadline remove this /by 01/04/2020 1200
+event keep last /from 01/04/2020 1300 /to 01/04/2020 1400
 delete 2
 delete 0
 delete
@@ -272,16 +272,16 @@ Got it. I've added this task:
 [T][ ] keep first
 Now you have 1 tasks in the list.
 Got it. I've added this task:
-[D][ ] remove this (by: tomorrow)
+[D][ ] remove this (by: Apr 1 2020 1200)
 Now you have 2 tasks in the list.
 Got it. I've added this task:
-[E][ ] keep last (from: 2pm to: 3pm)
+[E][ ] keep last (from: Apr 1 2020 1300 to: Apr 1 2020 1400)
 Now you have 3 tasks in the list.
 Noted. I've removed this task:
-[D][ ] remove this (by: tomorrow)
+[D][ ] remove this (by: Apr 1 2020 1200)
 Now you have 2 tasks in the list.
 Oops! There is no task numbered 0.
-Oops! The delete command needs a task number.
+Oops! Use: delete <task number>.
 Got it. I've added this task:
 [T][ ] add after error
 Now you have 3 tasks in the list.
@@ -289,7 +289,7 @@ Oops! A task number must be a whole number.
 Oops! There is no task numbered 4.
 Here are the tasks in your list:
 1.[T][ ] keep first
-2.[E][ ] keep last (from: 2pm to: 3pm)
+2.[E][ ] keep last (from: Apr 1 2020 1300 to: Apr 1 2020 1400)
 3.[T][ ] add after error
 Bye. Hope to see you again soon!
 ```
@@ -304,8 +304,8 @@ Match: contains
 
 ```text
 todo read book
-deadline return book /by June 6th
-event project meeting /from Aug 6th 2pm /to 4pm
+deadline return book /by 06/06/2020 1200
+event project meeting /from 06/08/2020 1400 /to 06/08/2020 1600
 mark 1
 delete 2
 bye
@@ -318,14 +318,14 @@ Got it. I've added this task:
 [T][ ] read book
 Now you have 1 tasks in the list.
 Got it. I've added this task:
-[D][ ] return book (by: June 6th)
+[D][ ] return book (by: Jun 6 2020 1200)
 Now you have 2 tasks in the list.
 Got it. I've added this task:
-[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+[E][ ] project meeting (from: Aug 6 2020 1400 to: Aug 6 2020 1600)
 Now you have 3 tasks in the list.
 [T][X] read book
 Noted. I've removed this task:
-[D][ ] return book (by: June 6th)
+[D][ ] return book (by: Jun 6 2020 1200)
 Now you have 2 tasks in the list.
 Bye. Hope to see you again soon!
 ```
@@ -334,7 +334,7 @@ Bye. Hope to see you again soon!
 
 ```text
 T | 1 | read book
-E | 0 | project meeting | Aug 6th 2pm | 4pm
+E | 0 | project meeting | 06/08/2020 1400 | 06/08/2020 1600
 ```
 
 ## Test case: Load tasks from a previous session
@@ -347,8 +347,8 @@ Match: contains
 
 ```text
 T | 1 | read book
-D | 0 | return book | June 6th
-E | 0 | project meeting | Aug 6th 2pm | 4pm
+D | 0 | return book | 06/06/2020 1200
+E | 0 | project meeting | 06/08/2020 1400 | 06/08/2020 1600
 ```
 
 ### Inputs
@@ -363,8 +363,251 @@ bye
 ```text
 Here are the tasks in your list:
 1.[T][X] read book
-2.[D][ ] return book (by: June 6th)
-3.[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+2.[D][ ] return book (by: Jun 6 2020 1200)
+3.[E][ ] project meeting (from: Aug 6 2020 1400 to: Aug 6 2020 1600)
+Bye. Hope to see you again soon!
+```
+
+## Test case: Accept date and time boundary values
+
+Aim: Verify that one- and two-digit dates, midnight, the end of the day, and event ranges across dates are accepted.
+
+Match: contains
+
+### Inputs
+
+```text
+deadline midnight /by 2/12/2019 0000
+deadline end of day /by 02/12/2019 2359
+event overnight /from 31/12/2019 2300 /to 01/01/2020 0030
+list
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[D][ ] midnight (by: Dec 2 2019 0000)
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+[D][ ] end of day (by: Dec 2 2019 2359)
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+[E][ ] overnight (from: Dec 31 2019 2300 to: Jan 1 2020 0030)
+Now you have 3 tasks in the list.
+Here are the tasks in your list:
+1.[D][ ] midnight (by: Dec 2 2019 0000)
+2.[D][ ] end of day (by: Dec 2 2019 2359)
+3.[E][ ] overnight (from: Dec 31 2019 2300 to: Jan 1 2020 0030)
+Bye. Hope to see you again soon!
+```
+
+## Test case: Accept date-only deadlines and events
+
+Aim: Verify that times are optional, date-only values display without an invented time, and the save file preserves that choice.
+
+Match: contains
+
+### Inputs
+
+```text
+deadline submit form /by 2/12/2019
+event conference /from 3/12/2019 /to 4/12/2019
+event briefing /from 4/12/2019 0900 /to 4/12/2019
+list
+what's on: 4/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[D][ ] submit form (by: Dec 2 2019)
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+Now you have 3 tasks in the list.
+Here are the tasks in your list:
+1.[D][ ] submit form (by: Dec 2 2019)
+2.[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+3.[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+Here are the events and deadlines on Dec 4 2019:
+Events:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
+### Expected file: data/duke.txt
+
+```text
+D | 0 | submit form | 02/12/2019
+E | 0 | conference | 03/12/2019 | 04/12/2019
+E | 0 | briefing | 04/12/2019 0900 | 04/12/2019
+```
+
+## Test case: Restore date-only task details from the save file
+
+Aim: Verify that date-only task details are restored without adding a time during a later session.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+D | 0 | submit form | 02/12/2019
+E | 0 | conference | 03/12/2019 | 04/12/2019
+```
+
+### Inputs
+
+```text
+list
+what's on: 04/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Here are the tasks in your list:
+1.[D][ ] submit form (by: Dec 2 2019)
+2.[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+Here are the events and deadlines on Dec 4 2019:
+Events:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
+## Test case: Reject invalid date and time values
+
+Aim: Verify that impossible dates, `2400`, five-digit times, and invalid event dates are rejected without adding tasks.
+
+Match: contains
+
+### Inputs
+
+```text
+deadline impossible date /by 31/02/2019 1200
+deadline invalid hour /by 02/12/2019 2400
+deadline with seconds /by 02/12/2019 120000
+event impossible end /from 01/01/2020 1200 /to 31/02/2020 1300
+list
+bye
+```
+
+### Expected output
+
+```text
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Here are the tasks in your list:
+no tasks for now! go doomscroll
+Bye. Hope to see you again soon!
+```
+
+## Test case: Show events and deadlines for a date in time order
+
+Aim: Verify that `what's on:` filters by date, sorts events and deadlines independently by time, and places events before the divider.
+
+Match: contains
+
+### Inputs
+
+```text
+event afternoon meeting /from 02/12/2019 1400 /to 02/12/2019 1600
+deadline late report /by 02/12/2019 1800
+event morning meeting /from 2/12/2019 0900 /to 2/12/2019 1000
+deadline early report /by 2/12/2019 0800
+what's on: 02/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Here are the events and deadlines on Dec 2 2019:
+Events:
+[E][ ] morning meeting (from: Dec 2 2019 0900 to: Dec 2 2019 1000)
+[E][ ] afternoon meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)
+--------------------
+Deadlines:
+[D][ ] early report (by: Dec 2 2019 0800)
+[D][ ] late report (by: Dec 2 2019 1800)
+Bye. Hope to see you again soon!
+```
+
+## Test case: Include events that overlap the requested date
+
+Aim: Verify that an event crossing midnight is shown on both dates covered by its interval, while an event outside the date is excluded.
+
+Match: contains
+
+### Inputs
+
+```text
+event overnight /from 31/12/2019 2300 /to 01/01/2020 0030
+event next evening /from 01/01/2020 1800 /to 01/01/2020 1900
+what's on: 01/01/2020
+bye
+```
+
+### Expected output
+
+```text
+Here are the events and deadlines on Jan 1 2020:
+Events:
+[E][ ] overnight (from: Dec 31 2019 2300 to: Jan 1 2020 0030)
+[E][ ] next evening (from: Jan 1 2020 1800 to: Jan 1 2020 1900)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
+## Test case: Handle dates with no matching tasks and invalid query dates
+
+Aim: Verify that an empty result is reported clearly and an invalid query date returns an error without stopping the chatbot.
+
+Match: contains
+
+### Inputs
+
+```text
+what's on
+what's on:
+what's on: 02/12/2019 extra
+what's on: 31/02/2019
+what's on: 02/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Oops! Use: what's on: <date>.
+Oops! Use: what's on: <date>.
+Oops! Use date format DD/MM/YYYY with a valid calendar date.
+Oops! Use date format DD/MM/YYYY with a valid calendar date.
+Here are the events and deadlines on Dec 2 2019:
+Events:
+No events on this date.
+--------------------
+Deadlines:
+No deadlines on this date.
 Bye. Hope to see you again soon!
 ```
 
