@@ -1,0 +1,45 @@
+package chausistant.task;
+
+import java.time.LocalDateTime;
+
+/** A task that occurs during a specified time interval. */
+public class EventTask extends Task {
+    private final LocalDateTime from;
+    private final LocalDateTime to;
+    private final boolean hasFromTime;
+    private final boolean hasToTime;
+
+    /** Creates an event task with its parsed start and end date/time. */
+    public EventTask(String item, LocalDateTime from, boolean hasFromTime,
+                     LocalDateTime to, boolean hasToTime) {
+        super(item);
+        this.from = from;
+        this.to = to;
+        this.hasFromTime = hasFromTime;
+        this.hasToTime = hasToTime;
+    }
+
+    /** Returns the event start date and time for filtering and sorting. */
+    public LocalDateTime getFrom() {
+        return from;
+    }
+
+    /** Returns the event end date and time for filtering. */
+    public LocalDateTime getTo() {
+        return to;
+    }
+
+    @Override
+    public String printTask() {
+        return "[E]" + getStatusMark() + " " + getItem()
+                + " (from: " + formatDateTimeForDisplay(from, hasFromTime)
+                + " to: " + formatDateTimeForDisplay(to, hasToTime) + ")";
+    }
+
+    @Override
+    public String toSaveFormat() {
+        return formatSaveLine("E", getSaveStatus(), getItem(),
+                formatDateTimeForSave(from, hasFromTime),
+                formatDateTimeForSave(to, hasToTime));
+    }
+}

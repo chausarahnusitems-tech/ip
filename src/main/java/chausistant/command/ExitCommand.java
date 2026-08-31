@@ -1,3 +1,9 @@
+package chausistant.command;
+
+import chausistant.storage.Storage;
+import chausistant.task.TaskList;
+import chausistant.ui.Ui;
+
 /** Command that displays a farewell message and ends the chatbot session. */
 public class ExitCommand extends Command {
 

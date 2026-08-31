@@ -1,3 +1,5 @@
+package chausistant.task;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -53,13 +55,13 @@ public abstract class Task {
     }
 
     /** Returns the task in the format shown to the user. */
-    abstract String printTask();
+    public abstract String printTask();
 
     /** Converts this task into one line for the save file. */
-    abstract String toSaveFormat();
+    public abstract String toSaveFormat();
 
     /** Formats a date for the chatbot's user-facing output. */
-    static String formatDateForDisplay(LocalDate date) {
+    public static String formatDateForDisplay(LocalDate date) {
         return date.format(DISPLAY_DATE_FORMATTER);
     }
 
@@ -80,92 +82,5 @@ public abstract class Task {
             escapedFields.add(field.replace("\\", "\\\\").replace("|", "\\|"));
         }
         return String.join(" | ", escapedFields);
-    }
-}
-
-/** A task without a deadline or event timing details. */
-class TodoTask extends Task {
-    TodoTask(String item) {
-        super(item);
-    }
-
-    @Override
-    String printTask() {
-        return "[T]" + getStatusMark() + " " + getItem();
-    }
-
-    @Override
-    String toSaveFormat() {
-        return formatSaveLine("T", getSaveStatus(), getItem());
-    }
-}
-
-/** A task that must be completed by a specified time or date. */
-class DeadlineTask extends Task {
-    private final LocalDateTime deadline;
-    private final boolean hasDeadlineTime;
-
-    DeadlineTask(String item, LocalDateTime deadline, boolean hasDeadlineTime) {
-        super(item);
-        this.deadline = deadline;
-        this.hasDeadlineTime = hasDeadlineTime;
-    }
-
-    /** Returns this deadline's date and time for filtering and sorting. */
-    LocalDateTime getDeadline() {
-        return deadline;
-    }
-
-    @Override
-    String printTask() {
-        return "[D]" + getStatusMark() + " " + getItem()
-                + " (by: " + formatDateTimeForDisplay(deadline, hasDeadlineTime) + ")";
-    }
-
-    @Override
-    String toSaveFormat() {
-        return formatSaveLine("D", getSaveStatus(), getItem(),
-                formatDateTimeForSave(deadline, hasDeadlineTime));
-    }
-}
-
-/** A task that occurs during a specified time interval. */
-class EventTask extends Task {
-    private final LocalDateTime from;
-    private final LocalDateTime to;
-    private final boolean hasFromTime;
-    private final boolean hasToTime;
-
-    EventTask(String item, LocalDateTime from, boolean hasFromTime,
-              LocalDateTime to, boolean hasToTime) {
-        super(item);
-        this.from = from;
-        this.to = to;
-        this.hasFromTime = hasFromTime;
-        this.hasToTime = hasToTime;
-    }
-
-    /** Returns the event start date and time for filtering and sorting. */
-    LocalDateTime getFrom() {
-        return from;
-    }
-
-    /** Returns the event end date and time for filtering. */
-    LocalDateTime getTo() {
-        return to;
-    }
-
-    @Override
-    String printTask() {
-        return "[E]" + getStatusMark() + " " + getItem()
-                + " (from: " + formatDateTimeForDisplay(from, hasFromTime)
-                + " to: " + formatDateTimeForDisplay(to, hasToTime) + ")";
-    }
-
-    @Override
-    String toSaveFormat() {
-        return formatSaveLine("E", getSaveStatus(), getItem(),
-                formatDateTimeForSave(from, hasFromTime),
-                formatDateTimeForSave(to, hasToTime));
     }
 }

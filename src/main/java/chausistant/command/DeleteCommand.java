@@ -1,3 +1,10 @@
+package chausistant.command;
+
+import chausistant.exception.ChausistantException;
+import chausistant.storage.Storage;
+import chausistant.task.Task;
+import chausistant.task.TaskList;
+import chausistant.ui.Ui;
 import java.io.IOException;
 
 /** Command that removes one task from the task list. */

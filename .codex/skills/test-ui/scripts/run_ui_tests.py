@@ -133,7 +133,7 @@ def run_case(case: TestCase, classes_dir: Path, working_directory: Path) -> str:
     """Run one fresh Chausistant session and return its combined console output."""
     session_input = "\n".join(case.commands) + "\n"
     result = subprocess.run(
-        ["java", "-cp", str(classes_dir), "Chausistant"],
+        ["java", "-cp", str(classes_dir), "chausistant.Chausistant"],
         cwd=working_directory,
         input=session_input,
         text=True,
@@ -214,7 +214,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="chausistant-ui-test-") as temp_dir:
         classes_dir = Path(temp_dir)
-        source_files = sorted((project_root / "src/main/java").glob("*.java"))
+        source_files = sorted((project_root / "src/main/java").rglob("*.java"))
         if not source_files:
             print("TEST SESSION FAILED: no Java source files were found.")
             return 1

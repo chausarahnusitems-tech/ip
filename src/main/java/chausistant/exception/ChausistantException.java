@@ -1,3 +1,5 @@
+package chausistant.exception;
+
 /**
  * Represents a user-facing command error that does not end the chatbot.
  */

@@ -1,3 +1,10 @@
+package chausistant.storage;
+
+import chausistant.task.DeadlineTask;
+import chausistant.task.EventTask;
+import chausistant.task.Task;
+import chausistant.task.TaskList;
+import chausistant.task.TodoTask;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;

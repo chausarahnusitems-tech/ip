@@ -1,3 +1,5 @@
+package chausistant.command;
+
 /** Command that marks one task as not completed. */
 public class UnmarkCommand extends StatusCommand {
 
