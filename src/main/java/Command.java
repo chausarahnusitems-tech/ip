@@ -1,3 +1,5 @@
+import java.io.IOException;
+
 /**
  * Represents one parsed instruction that the chatbot can execute.
  *
@@ -6,8 +8,9 @@
  */
 public abstract class Command {
 
-    /** Performs this command's user-facing action using the current task list. */
-    public abstract void execute(TaskList tasks, Ui ui);
+    /** Performs this command's action using the application's current collaborators. */
+    public abstract void execute(TaskList tasks, Ui ui, Storage storage)
+            throws ChausistantException, IOException;
 
     /** Returns whether executing this command should end the chatbot session. */
     public boolean isExit() {

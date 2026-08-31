@@ -1,9 +1,7 @@
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -82,16 +80,6 @@ public class Chausistant {
 
         boolean hasTime() {
             return hasTime;
-        }
-    }
-
-    /**
-     * Represents an invalid command that Chausistant can explain to the user
-     * without ending the program.
-     */
-    private static class ChausistantException extends Exception {
-        ChausistantException(String message) {
-            super(message);
         }
     }
 
@@ -261,41 +249,18 @@ public class Chausistant {
     }
 
     /**
-     * Updates the completion status of the numbered task.
-     *
-     * @param action either {@code mark} or {@code unmark}
-     * @param details the task number entered by the user
-     * @param todoList the list containing the tasks
-     * @throws ChausistantException if the task number is missing, invalid, or absent
-     */
-    private static void updateTaskStatus(CommandType action, String details, TaskList todoList, Ui ui)
-            throws ChausistantException, IOException {
-        int taskIndex = getTaskIndex(action, details, todoList);
-        Task task = todoList.get(taskIndex);
-        boolean wasCompleted = task.isCompleted();
-        task.setStatus(action == CommandType.MARK);
-        try {
-            saveTasks(todoList);
-        } catch (IOException error) {
-            task.setStatus(wasCompleted);
-            throw error;
-        }
-        ui.showTaskStatus(task.printTask());
-    }
-
-    /**
      * Removes the numbered task and reports the task that was removed.
      *
      * @param details the task number entered by the user
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void deleteTask(String details, TaskList todoList, Ui ui)
+    private static void deleteTask(String details, TaskList todoList, Ui ui, Storage storage)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(CommandType.DELETE, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
         try {
-            saveTasks(todoList);
+            storage.save(todoList);
         } catch (IOException error) {
             todoList.add(taskIndex, removedTask);
             throw error;
@@ -338,37 +303,6 @@ public class Chausistant {
         List<String> eventDetails = events.stream().map(EventTask::printTask).toList();
         List<String> deadlineDetails = deadlines.stream().map(DeadlineTask::printTask).toList();
         ui.showSchedule(displayDate, eventDetails, deadlineDetails);
-    }
-
-    /**
-     * Writes the complete current task list to the application's save file.
-     *
-     * <p>Writing the entire list after each change keeps the storage format simple.</p>
-     *
-     * @param todoList the task list to save
-     * @throws IOException if the data directory or save file cannot be written
-     */
-    private static void saveTasks(TaskList todoList) throws IOException {
-        Path dataDirectory = SAVE_FILE.getParent();
-        Files.createDirectories(dataDirectory);
-        List<String> savedTasks = todoList.getTasks().stream().map(Task::toSaveFormat).toList();
-        Path temporaryFile = Files.createTempFile(dataDirectory, "duke-", ".tmp");
-        try {
-            Files.write(temporaryFile, savedTasks, StandardCharsets.UTF_8);
-            replaceSaveFile(temporaryFile);
-        } finally {
-            Files.deleteIfExists(temporaryFile);
-        }
-    }
-
-    /** Replaces the save file without leaving a partially written task list behind. */
-    private static void replaceSaveFile(Path temporaryFile) throws IOException {
-        try {
-            Files.move(temporaryFile, SAVE_FILE, StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException error) {
-            Files.move(temporaryFile, SAVE_FILE, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 
     /**
@@ -541,7 +475,7 @@ public class Chausistant {
      * @return {@code false} when the program should exit; otherwise {@code true}
      * @throws ChausistantException if the command cannot be completed
      */
-    private static boolean processCommand(String command, TaskList todoList, Ui ui)
+    private static boolean processCommand(String command, TaskList todoList, Ui ui, Storage storage)
             throws ChausistantException, IOException {
         Matcher whatIsOnMatcher = WHAT_IS_ON_PATTERN.matcher(command);
         if (whatIsOnMatcher.matches()) {
@@ -567,25 +501,27 @@ public class Chausistant {
             case BYE -> {
                 validateNoDetails(validatedAction, details);
                 Command exitCommand = new ExitCommand();
-                exitCommand.execute(todoList, ui);
+                exitCommand.execute(todoList, ui, storage);
                 return !exitCommand.isExit();
             }
 
             case LIST -> {
                 validateNoDetails(validatedAction, details);
                 Command listCommand = new ListCommand();
-                listCommand.execute(todoList, ui);
+                listCommand.execute(todoList, ui, storage);
                 return true;
             }
 
             case MARK, UNMARK -> {
-                updateTaskStatus(validatedAction, details, todoList, ui);
+                Command statusCommand = validatedAction == CommandType.MARK
+                        ? new MarkCommand(details) : new UnmarkCommand(details);
+                statusCommand.execute(todoList, ui, storage);
                 return true;
             }
 
 
             case DELETE -> {
-                deleteTask(details, todoList, ui);
+                deleteTask(details, todoList, ui, storage);
                 return true;
             }
 
@@ -593,7 +529,7 @@ public class Chausistant {
                 Task taskItem = createTask(validatedAction, details);
                 todoList.add(taskItem);
                 try {
-                    saveTasks(todoList);
+                    storage.save(todoList);
                 } catch (IOException error) {
                     todoList.remove(todoList.size() - 1);
                     throw error;
@@ -607,6 +543,7 @@ public class Chausistant {
 
     public static void main(String[] args) {
         Ui ui = new Ui();
+        Storage storage = new Storage(SAVE_FILE);
         ui.showWelcome();
 
         TaskList todoList = new TaskList();
@@ -628,7 +565,7 @@ public class Chausistant {
             }
 
             try {
-                if (!processCommand(command, todoList, ui)) {
+                if (!processCommand(command, todoList, ui, storage)) {
                     break;
                 }
             } catch (ChausistantException error) {
