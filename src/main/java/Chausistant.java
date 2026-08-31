@@ -318,14 +318,8 @@ public class Chausistant {
 
             case TODO, DEADLINE, EVENT -> {
                 Task taskItem = createTask(validatedAction, details);
-                todoList.add(taskItem);
-                try {
-                    storage.save(todoList);
-                } catch (IOException error) {
-                    todoList.remove(todoList.size() - 1);
-                    throw error;
-                }
-                ui.showTaskAdded(taskItem.printTask(), todoList.size());
+                Command addCommand = new AddCommand(taskItem);
+                addCommand.execute(todoList, ui, storage);
                 return true;
             }
         }
