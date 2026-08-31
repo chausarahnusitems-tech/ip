@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -418,7 +417,7 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList)
+    private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
@@ -430,7 +429,7 @@ public class Chausistant {
             task.setStatus(wasCompleted);
             throw error;
         }
-        System.out.println(task.printTask());
+        ui.showTaskStatus(task.printTask());
     }
 
     /**
@@ -440,7 +439,7 @@ public class Chausistant {
      * @param todoList the list containing the tasks
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
-    private static void deleteTask(String details, ArrayList<Task> todoList)
+    private static void deleteTask(String details, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(DELETE_COMMAND, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
@@ -450,21 +449,12 @@ public class Chausistant {
             todoList.add(taskIndex, removedTask);
             throw error;
         }
-        System.out.println("Noted. I've removed this task:");
-        System.out.println(removedTask.printTask());
-        System.out.println("Now you have " + todoList.size() + " tasks in the list.");
+        ui.showTaskDeleted(removedTask.printTask(), todoList.size());
     }
 
     /** Displays every task currently stored in the task list. */
-    private static void displayTasks(ArrayList<Task> todoList) {
-        System.out.println("Here are the tasks in your list:");
-        if (todoList.isEmpty()) {
-            System.out.println("no tasks for now! go doomscroll");
-        }
-
-        for (int i = 0; i < todoList.size(); i++) {
-            System.out.println((i + 1) + "." + todoList.get(i).printTask());
-        }
+    private static void displayTasks(ArrayList<Task> todoList, Ui ui) {
+        ui.showTaskList(todoList.stream().map(Task::printTask).toList());
     }
 
     /**
@@ -478,7 +468,7 @@ public class Chausistant {
      * @param todoList the list of tasks to search
      * @throws ChausistantException if the requested date is invalid
      */
-    private static void displayTasksOnDate(String dateText, ArrayList<Task> todoList)
+    private static void displayTasksOnDate(String dateText, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException {
         LocalDate date = parseInputDate(dateText);
         ArrayList<EventTask> events = new ArrayList<>();
@@ -499,25 +489,9 @@ public class Chausistant {
         deadlines.sort(Comparator.comparing(DeadlineTask::getDeadline));
 
         String displayDate = date.format(DISPLAY_DATE_FORMATTER);
-        System.out.println("Here are the events and deadlines on " + displayDate + ":");
-        System.out.println("Events:");
-        if (events.isEmpty()) {
-            System.out.println("No events on this date.");
-        } else {
-            for (EventTask event : events) {
-                System.out.println(event.printTask());
-            }
-        }
-
-        System.out.println("--------------------");
-        System.out.println("Deadlines:");
-        if (deadlines.isEmpty()) {
-            System.out.println("No deadlines on this date.");
-        } else {
-            for (DeadlineTask deadline : deadlines) {
-                System.out.println(deadline.printTask());
-            }
-        }
+        List<String> eventDetails = events.stream().map(EventTask::printTask).toList();
+        List<String> deadlineDetails = deadlines.stream().map(DeadlineTask::printTask).toList();
+        ui.showSchedule(displayDate, eventDetails, deadlineDetails);
     }
 
     /**
@@ -735,7 +709,7 @@ public class Chausistant {
      * @return {@code false} when the program should exit; otherwise {@code true}
      * @throws ChausistantException if the command cannot be completed
      */
-    private static boolean processCommand(String command, ArrayList<Task> todoList)
+    private static boolean processCommand(String command, ArrayList<Task> todoList, Ui ui)
             throws ChausistantException, IOException {
         Matcher whatIsOnMatcher = WHAT_IS_ON_PATTERN.matcher(command);
         if (whatIsOnMatcher.matches()) {
@@ -743,7 +717,7 @@ public class Chausistant {
             if (dateText.isBlank()) {
                 throw new ChausistantException(WHAT_IS_ON_ERROR);
             }
-            displayTasksOnDate(dateText, todoList);
+            displayTasksOnDate(dateText, todoList, ui);
             return true;
         }
         if (command.length() >= 6 && command.regionMatches(true, 0, "what's", 0, 6)
@@ -760,24 +734,24 @@ public class Chausistant {
         switch (validatedAction) {
             case BYE -> {
                 validateNoDetails(action, details);
-                System.out.println("Bye. Hope to see you again soon!");
+                ui.showGoodbye();
                 return false;
             }
 
             case LIST -> {
                 validateNoDetails(action, details);
-                displayTasks(todoList);
+                displayTasks(todoList, ui);
                 return true;
             }
 
             case MARK, UNMARK -> {
-                updateTaskStatus(action, details, todoList);
+                updateTaskStatus(action, details, todoList, ui);
                 return true;
             }
 
 
             case DELETE -> {
-                deleteTask(details, todoList);
+                deleteTask(details, todoList, ui);
                 return true;
             }
 
@@ -790,9 +764,7 @@ public class Chausistant {
                     todoList.remove(todoList.size() - 1);
                     throw error;
                 }
-                System.out.println("Got it. I've added this task:");
-                System.out.println(taskItem.printTask());
-                System.out.println("Now you have " + todoList.size() + " tasks in the list.");
+                ui.showTaskAdded(taskItem.printTask(), todoList.size());
                 return true;
             }
         }
@@ -800,53 +772,35 @@ public class Chausistant {
     }
 
     public static void main(String[] args) {
-
-        String banner = """
-                 Hello! I'm 
-                 
-                 ████ █   █  ███  █   █  ████ █████  ████ █████  ███  █   █ █████
-                █     █   █ █   █ █   █ █       █   █       █   █   █ ██  █   █
-                █     █   █ █   █ █   █ █       █   █       █   █   █ ██  █   █
-                █     █████ █████ █   █  ███    █    ███    █   █████ █ █ █   █
-                █     █   █ █   █ █   █    █    █      █    █   █   █ █  ██   █
-                █     █   █ █   █ █   █    █    █      █    █   █   █ █  ██   █
-                 ████ █   █ █   █  ███  ████  █████ ████    █   █   █ █   █   █
-
-                                      chausistant
-                                      
-                What can I do for you today!  
-                """;
-        System.out.println(banner);
+        Ui ui = new Ui();
+        ui.showWelcome();
 
         ArrayList<Task> todoList = new ArrayList<>();
         try {
             LoadedTasks loadedTasks = loadTasks();
             todoList = loadedTasks.getTasks();
             for (String warning : loadedTasks.getWarnings()) {
-                System.out.println("Oops! " + warning);
+                ui.showError(warning);
             }
         } catch (IOException error) {
-            System.out.println("Oops! I could not load your tasks from " + SAVE_FILE + ".");
+            ui.showError("I could not load your tasks from " + SAVE_FILE + ".");
         }
 
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (scanner.hasNextLine()) {
-                String input = scanner.nextLine();
-                String command = input.strip();
+        while (ui.hasNextCommand()) {
+            String command = ui.readCommand();
 
-                if (command.isEmpty()) {
-                    continue;
-                }
+            if (command.isEmpty()) {
+                continue;
+            }
 
-                try {
-                    if (!processCommand(command, todoList)) {
-                        break;
-                    }
-                } catch (ChausistantException error) {
-                    System.out.println("Oops! " + error.getMessage());
-                } catch (IOException error) {
-                    System.out.println("Oops! I could not save your tasks to " + SAVE_FILE + ".");
+            try {
+                if (!processCommand(command, todoList, ui)) {
+                    break;
                 }
+            } catch (ChausistantException error) {
+                ui.showError(error.getMessage());
+            } catch (IOException error) {
+                ui.showError("I could not save your tasks to " + SAVE_FILE + ".");
             }
         }
     }

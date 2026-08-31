@@ -5,7 +5,7 @@
 - Each test runs in its own temporary working directory, so its save data
   cannot affect other tests or the developer's local task file.
 - Java version: Java 25
-- Compile command: `javac --release 25 -d <temporary-classes> src/main/java/Chausistant.java`
+- Compile command: `javac --release 25 -d <temporary-classes> src/main/java/*.java`
 - Run command: `java -cp <temporary-classes> Chausistant`
 - Each test case starts a fresh program session and sends its inputs in order.
 - The program prints a startup banner. These tests use `Match: contains`, so
