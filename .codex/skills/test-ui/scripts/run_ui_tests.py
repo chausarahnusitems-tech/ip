@@ -23,6 +23,7 @@ class TestCase:
     expected: str
     match_mode: str
     initial_files: list["FileFixture"]
+    initial_directories: list[Path]
     expected_files: list["FileFixture"]
 
 
@@ -49,13 +50,17 @@ TEST_CASE_PATTERN = re.compile(
 )
 BLOCK_PATTERN = re.compile(
     r"^### (?P<title>Inputs|Expected output)\s*\n"
-    r"```(?:text)?\s*\n(?P<content>.*?)\n```",
+    r"```(?:text)?\s*\n(?P<content>.*?)(?:\n)?^```$",
     re.MULTILINE | re.DOTALL,
 )
 FILE_BLOCK_PATTERN = re.compile(
     r"^### (?P<kind>Initial|Expected) file:\s*(?P<path>.+?)\s*\n"
-    r"```(?:text)?\s*\n(?P<content>.*?)\n```",
+    r"```(?:text)?\s*\n(?P<content>.*?)(?:\n)?^```$",
     re.MULTILINE | re.DOTALL,
+)
+DIRECTORY_PATTERN = re.compile(
+    r"^### Initial directory:\s*(?P<path>.+?)\s*$",
+    re.MULTILINE,
 )
 
 
@@ -93,6 +98,13 @@ def parse_plan(plan_path: Path) -> list[TestCase]:
                 FileFixture(path, file_block.group("content"))
             )
 
+        initial_directories = []
+        for directory_match in DIRECTORY_PATTERN.finditer(body):
+            path = Path(directory_match.group("path").strip())
+            if path.is_absolute() or ".." in path.parts:
+                raise ValueError("Directory fixture paths must be relative and stay within the test directory.")
+            initial_directories.append(path)
+
         cases.append(
             TestCase(
                 name=match.group("name").strip(),
@@ -101,6 +113,7 @@ def parse_plan(plan_path: Path) -> list[TestCase]:
                 expected=blocks["Expected output"],
                 match_mode=match_match.group(1) if match_match else "contains",
                 initial_files=file_fixtures["Initial"],
+                initial_directories=initial_directories,
                 expected_files=file_fixtures["Expected"],
             )
         )
@@ -145,8 +158,10 @@ def expected_matches(case: TestCase, actual: str) -> bool:
     return expected in actual
 
 
-def write_initial_files(case: TestCase, working_directory: Path) -> None:
-    """Create the test case's declared initial files."""
+def write_initial_fixtures(case: TestCase, working_directory: Path) -> None:
+    """Create the test case's declared initial files and directories."""
+    for directory in case.initial_directories:
+        (working_directory / directory).mkdir(parents=True, exist_ok=True)
     for fixture in case.initial_files:
         file_path = working_directory / fixture.path
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -223,7 +238,7 @@ def main() -> int:
             working_directory = classes_dir / f"case-{index}"
             working_directory.mkdir()
             try:
-                write_initial_files(case, working_directory)
+                write_initial_fixtures(case, working_directory)
                 actual = run_case(case, classes_dir, working_directory)
             except ProgramRunError as error:
                 actual = error.output
