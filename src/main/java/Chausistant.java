@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -30,6 +31,8 @@ public class Chausistant {
     private static final String UNMARK_COMMAND = "unmark";
     private static final String DELETE_COMMAND = "delete";
     private static final Path SAVE_FILE = Path.of("data", "duke.txt");
+    private static final LocalTime START_OF_DAY = LocalTime.MIDNIGHT;
+    private static final LocalTime END_OF_DAY = LocalTime.of(23, 59);
     private static final DateTimeFormatter INPUT_DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendPattern("d/M/uuuu HHmm")
             .toFormatter(Locale.ROOT)
@@ -40,6 +43,8 @@ public class Chausistant {
             .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter SAVE_DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("dd/MM/uuuu HHmm", Locale.ROOT);
+    private static final DateTimeFormatter SAVE_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("dd/MM/uuuu", Locale.ROOT);
     private static final DateTimeFormatter DISPLAY_DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("MMM d uuuu HHmm", Locale.ENGLISH);
     private static final DateTimeFormatter DISPLAY_DATE_FORMATTER =
@@ -49,10 +54,14 @@ public class Chausistant {
     private static final Pattern DATE_SHAPE = Pattern.compile(
             "^\\d{1,2}/\\d{1,2}/\\d{4}$");
     private static final String DATE_TIME_ERROR =
-            "Use date/time format DD/MM/YYYY HHmm with a valid calendar date.";
+            "Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.";
     private static final String DATE_ERROR =
             "Use date format DD/MM/YYYY with a valid calendar date.";
     private static final String WHAT_IS_ON_ERROR = "Use: what's on: <date>.";
+    private static final String TODO_USAGE = "Use: todo <task>.";
+    private static final String DEADLINE_USAGE = "Use: deadline <task> /by <date> [HHmm].";
+    private static final String EVENT_USAGE =
+            "Use: event <task> /from <date> [HHmm] /to <date> [HHmm].";
 
     private enum Command {
         BYE("bye"),
@@ -112,6 +121,25 @@ public class Chausistant {
         abstract String toSaveFormat();
     }
 
+    /** Holds a parsed date and whether the user supplied a time for it. */
+    private static class DateTimeDetails {
+        private final LocalDateTime dateTime;
+        private final boolean hasTime;
+
+        DateTimeDetails(LocalDateTime dateTime, boolean hasTime) {
+            this.dateTime = dateTime;
+            this.hasTime = hasTime;
+        }
+
+        LocalDateTime getDateTime() {
+            return dateTime;
+        }
+
+        boolean hasTime() {
+            return hasTime;
+        }
+    }
+
     /** A task without a deadline or event timing details. */
     private static class TodoTask extends Task {
         TodoTask(String item) {
@@ -132,10 +160,12 @@ public class Chausistant {
     /** A task that must be completed by a specified time or date. */
     private static class DeadlineTask extends Task {
         private final LocalDateTime deadline;
+        private final boolean hasDeadlineTime;
 
-        DeadlineTask(String item, LocalDateTime deadline) {
+        DeadlineTask(String item, LocalDateTime deadline, boolean hasDeadlineTime) {
             super(item);
             this.deadline = deadline;
+            this.hasDeadlineTime = hasDeadlineTime;
         }
 
         /** Returns this deadline's date and time for filtering and sorting. */
@@ -146,13 +176,13 @@ public class Chausistant {
         @Override
         String printTask() {
             return "[D]" + getStatusMark() + " " + getItem()
-                    + " (by: " + deadline.format(DISPLAY_DATE_TIME_FORMATTER) + ")";
+                    + " (by: " + formatDateTimeForDisplay(deadline, hasDeadlineTime) + ")";
         }
 
         @Override
         String toSaveFormat() {
             return formatSaveLine("D", getSaveStatus(), getItem(),
-                    deadline.format(SAVE_DATE_TIME_FORMATTER));
+                    formatDateTimeForSave(deadline, hasDeadlineTime));
         }
     }
 
@@ -160,11 +190,16 @@ public class Chausistant {
     private static class EventTask extends Task {
         private final LocalDateTime from;
         private final LocalDateTime to;
+        private final boolean hasFromTime;
+        private final boolean hasToTime;
 
-        EventTask(String item, LocalDateTime from, LocalDateTime to) {
+        EventTask(String item, LocalDateTime from, boolean hasFromTime,
+                  LocalDateTime to, boolean hasToTime) {
             super(item);
             this.from = from;
             this.to = to;
+            this.hasFromTime = hasFromTime;
+            this.hasToTime = hasToTime;
         }
 
         /** Returns the event start date and time for filtering and sorting. */
@@ -180,14 +215,15 @@ public class Chausistant {
         @Override
         String printTask() {
             return "[E]" + getStatusMark() + " " + getItem()
-                    + " (from: " + from.format(DISPLAY_DATE_TIME_FORMATTER)
-                    + " to: " + to.format(DISPLAY_DATE_TIME_FORMATTER) + ")";
+                    + " (from: " + formatDateTimeForDisplay(from, hasFromTime)
+                    + " to: " + formatDateTimeForDisplay(to, hasToTime) + ")";
         }
 
         @Override
         String toSaveFormat() {
             return formatSaveLine("E", getSaveStatus(), getItem(),
-                    from.format(SAVE_DATE_TIME_FORMATTER), to.format(SAVE_DATE_TIME_FORMATTER));
+                    formatDateTimeForSave(from, hasFromTime),
+                    formatDateTimeForSave(to, hasToTime));
         }
     }
 
@@ -250,7 +286,7 @@ public class Chausistant {
      */
     private static Task createTask(String action, String details) throws ChausistantException {
         if (details.isBlank()) {
-            throw new ChausistantException("The " + action + " command needs a description.");
+            throw new ChausistantException(getTaskUsage(action));
         }
 
         if (action.equals("todo")) {
@@ -260,42 +296,59 @@ public class Chausistant {
         if (action.equals("deadline")) {
             Matcher matcher = DEADLINE_PATTERN.matcher(details);
             if (matcher.matches()) {
+                DateTimeDetails deadline = parseInputDateTime(matcher.group(2).strip(), END_OF_DAY);
                 return new DeadlineTask(matcher.group(1).strip(),
-                        parseInputDateTime(matcher.group(2).strip()));
+                        deadline.getDateTime(), deadline.hasTime());
             }
-            throw new ChausistantException("Use: deadline <task> /by <date or time>.");
+            throw new ChausistantException(DEADLINE_USAGE);
         }
 
         if (action.equals("event")) {
             Matcher matcher = EVENT_PATTERN.matcher(details);
             if (matcher.matches()) {
-                return new EventTask(matcher.group(1).strip(),
-                        parseInputDateTime(matcher.group(2).strip()),
-                        parseInputDateTime(matcher.group(3).strip()));
+                DateTimeDetails from = parseInputDateTime(matcher.group(2).strip(), START_OF_DAY);
+                DateTimeDetails to = parseInputDateTime(matcher.group(3).strip(), END_OF_DAY);
+                return new EventTask(matcher.group(1).strip(), from.getDateTime(), from.hasTime(),
+                        to.getDateTime(), to.hasTime());
             }
-            throw new ChausistantException("Use: event <task> /from <start> /to <end>.");
+            throw new ChausistantException(EVENT_USAGE);
         }
 
         throw new ChausistantException("I don't know the command \"" + action + "\".");
     }
 
     /**
-     * Parses one user-entered date and time in the fixed Level 8 format.
+     * Parses one user-entered date, with an optional 24-hour time.
      *
-     * @param text the date and time to parse
-     * @return the parsed date and time
+     * @param text the date or date/time to parse
+     * @param defaultTime the time assigned when the user enters only a date
+     * @return the parsed date details, including whether a time was supplied
      * @throws ChausistantException if the shape or calendar value is invalid
      */
-    private static LocalDateTime parseInputDateTime(String text) throws ChausistantException {
-        if (!DATE_TIME_SHAPE.matcher(text).matches()) {
-            throw new ChausistantException(DATE_TIME_ERROR);
-        }
-
+    private static DateTimeDetails parseInputDateTime(String text, LocalTime defaultTime)
+            throws ChausistantException {
         try {
-            return LocalDateTime.parse(text, INPUT_DATE_TIME_FORMATTER);
+            if (DATE_SHAPE.matcher(text).matches()) {
+                return new DateTimeDetails(LocalDate.parse(text, INPUT_DATE_FORMATTER)
+                        .atTime(defaultTime), false);
+            }
+            if (DATE_TIME_SHAPE.matcher(text).matches()) {
+                return new DateTimeDetails(LocalDateTime.parse(text, INPUT_DATE_TIME_FORMATTER), true);
+            }
         } catch (DateTimeParseException error) {
             throw new ChausistantException(DATE_TIME_ERROR);
         }
+        throw new ChausistantException(DATE_TIME_ERROR);
+    }
+
+    /** Returns the command template for a task-creation action. */
+    private static String getTaskUsage(String action) {
+        return switch (action) {
+            case "todo" -> TODO_USAGE;
+            case "deadline" -> DEADLINE_USAGE;
+            case "event" -> EVENT_USAGE;
+            default -> throw new IllegalArgumentException("Unknown task action: " + action);
+        };
     }
 
     /**
@@ -317,6 +370,16 @@ public class Chausistant {
         }
     }
 
+    /** Formats a date or date/time for the chatbot's user-facing output. */
+    private static String formatDateTimeForDisplay(LocalDateTime dateTime, boolean hasTime) {
+        return dateTime.format(hasTime ? DISPLAY_DATE_TIME_FORMATTER : DISPLAY_DATE_FORMATTER);
+    }
+
+    /** Formats a date or date/time for one unambiguous save-file field. */
+    private static String formatDateTimeForSave(LocalDateTime dateTime, boolean hasTime) {
+        return dateTime.format(hasTime ? SAVE_DATE_TIME_FORMATTER : SAVE_DATE_FORMATTER);
+    }
+
     /**
      * Converts and validates a user-entered task number into an ArrayList index.
      *
@@ -329,7 +392,7 @@ public class Chausistant {
     private static int getTaskIndex(String action, String details, ArrayList<Task> todoList)
             throws ChausistantException {
         if (details.isBlank()) {
-            throw new ChausistantException("The " + action + " command needs a task number.");
+            throw new ChausistantException("Use: " + action + " <task number>.");
         }
 
         final int taskNumber;
@@ -538,24 +601,47 @@ public class Chausistant {
 
         Task task = switch (fields.get(0)) {
             case "T" -> new TodoTask(getSavedField(fields, 3, 2, "todo description"));
-            case "D" -> new DeadlineTask(getSavedField(fields, 4, 2, "deadline description"),
-                    parseSavedDateTime(getSavedField(fields, 4, 3, "deadline")));
-            case "E" -> new EventTask(getSavedField(fields, 5, 2, "event description"),
-                    parseSavedDateTime(getSavedField(fields, 5, 3, "event start time")),
-                    parseSavedDateTime(getSavedField(fields, 5, 4, "event end time")));
+            case "D" -> createSavedDeadline(fields);
+            case "E" -> createSavedEvent(fields);
             default -> throw new StorageException("unknown task type '" + fields.get(0) + "'.");
         };
         task.setStatus("1".equals(fields.get(1)));
         return task;
     }
 
-    /** Parses a date and time from a valid save-file field. */
-    private static LocalDateTime parseSavedDateTime(String value) throws StorageException {
+    /** Recreates a deadline while preserving whether its saved time was optional. */
+    private static DeadlineTask createSavedDeadline(List<String> fields) throws StorageException {
+        DateTimeDetails deadline = parseSavedDateTime(
+                getSavedField(fields, 4, 3, "deadline"), END_OF_DAY);
+        return new DeadlineTask(getSavedField(fields, 4, 2, "deadline description"),
+                deadline.getDateTime(), deadline.hasTime());
+    }
+
+    /** Recreates an event while preserving whether either saved time was optional. */
+    private static EventTask createSavedEvent(List<String> fields) throws StorageException {
+        DateTimeDetails from = parseSavedDateTime(
+                getSavedField(fields, 5, 3, "event start time"), START_OF_DAY);
+        DateTimeDetails to = parseSavedDateTime(
+                getSavedField(fields, 5, 4, "event end time"), END_OF_DAY);
+        return new EventTask(getSavedField(fields, 5, 2, "event description"),
+                from.getDateTime(), from.hasTime(), to.getDateTime(), to.hasTime());
+    }
+
+    /** Parses a date or date/time from a valid save-file field. */
+    private static DateTimeDetails parseSavedDateTime(String value, LocalTime defaultTime)
+            throws StorageException {
         try {
-            return LocalDateTime.parse(value, INPUT_DATE_TIME_FORMATTER);
+            if (DATE_SHAPE.matcher(value).matches()) {
+                return new DateTimeDetails(LocalDate.parse(value, INPUT_DATE_FORMATTER)
+                        .atTime(defaultTime), false);
+            }
+            if (DATE_TIME_SHAPE.matcher(value).matches()) {
+                return new DateTimeDetails(LocalDateTime.parse(value, INPUT_DATE_TIME_FORMATTER), true);
+            }
         } catch (DateTimeParseException error) {
             throw new StorageException("the saved date/time is invalid.");
         }
+        throw new StorageException("the saved date/time is invalid.");
     }
 
     /** Returns one required non-empty field from a saved task after validating its field count. */
@@ -620,7 +706,7 @@ public class Chausistant {
      */
     private static void validateNoDetails(String action, String details) throws ChausistantException {
         if (!details.isBlank()) {
-            throw new ChausistantException("The " + action + " command does not take extra text.");
+            throw new ChausistantException("Use: " + action + ".");
         }
     }
 
@@ -653,7 +739,11 @@ public class Chausistant {
             throws ChausistantException, IOException {
         Matcher whatIsOnMatcher = WHAT_IS_ON_PATTERN.matcher(command);
         if (whatIsOnMatcher.matches()) {
-            displayTasksOnDate(whatIsOnMatcher.group(1).strip(), todoList);
+            String dateText = whatIsOnMatcher.group(1).strip();
+            if (dateText.isBlank()) {
+                throw new ChausistantException(WHAT_IS_ON_ERROR);
+            }
+            displayTasksOnDate(dateText, todoList);
             return true;
         }
         if (command.length() >= 6 && command.regionMatches(true, 0, "what's", 0, 6)

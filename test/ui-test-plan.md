@@ -87,9 +87,9 @@ Here are the tasks in your list:
 Bye. Hope to see you again soon!
 ```
 
-## Test case: Handle invalid commands with ChausistantException
+## Test case: Handle invalid commands with helpful templates
 
-Aim: Verify that invalid user inputs show a clear error message and the program continues accepting commands.
+Aim: Verify that invalid user inputs show a command template when details are missing and the program continues accepting commands.
 
 Match: contains
 
@@ -113,19 +113,19 @@ bye
 ### Expected output
 
 ```text
-Oops! The todo command needs a description.
+Oops! Use: todo <task>.
 Oops! Unknown command: blah
-Oops! Use: deadline <task> /by <date or time>.
-Oops! Use: event <task> /from <start> /to <end>.
+Oops! Use: deadline <task> /by <date> [HHmm].
+Oops! Use: event <task> /from <date> [HHmm] /to <date> [HHmm].
 Got it. I've added this task:
 [T][ ] submit assignment
 Now you have 1 tasks in the list.
-Oops! The mark command needs a task number.
+Oops! Use: mark <task number>.
 Oops! A task number must be a whole number.
 Oops! There is no task numbered 2.
-Oops! The unmark command needs a task number.
-Oops! The list command does not take extra text.
-Oops! The bye command does not take extra text.
+Oops! Use: unmark <task number>.
+Oops! Use: list.
+Oops! Use: bye.
 Bye. Hope to see you again soon!
 ```
 
@@ -155,15 +155,15 @@ bye
 Got it. I've added this task:
 [T][ ] read chapter
 Now you have 1 tasks in the list.
-Oops! The todo command needs a description.
+Oops! Use: todo <task>.
 Got it. I've added this task:
 [D][ ] plan trip (by: Feb 28 2020 0900)
 Now you have 2 tasks in the list.
-Oops! Use: deadline <task> /by <date or time>.
+Oops! Use: deadline <task> /by <date> [HHmm].
 Got it. I've added this task:
 [E][ ] club meeting (from: Mar 2 2020 1400 to: Mar 2 2020 1500)
 Now you have 3 tasks in the list.
-Oops! Use: event <task> /from <start> /to <end>.
+Oops! Use: event <task> /from <date> [HHmm] /to <date> [HHmm].
 Oops! Unknown command: blah
 Here are the tasks in your list:
 1.[T][ ] read chapter
@@ -236,8 +236,8 @@ bye
 Got it. I've added this task:
 [T][ ] buy milk
 Now you have 1 tasks in the list.
-Oops! The list command does not take extra text.
-Oops! The bye command does not take extra text.
+Oops! Use: list.
+Oops! Use: bye.
 Here are the tasks in your list:
 1.[T][ ] buy milk
 Bye. Hope to see you again soon!
@@ -281,7 +281,7 @@ Noted. I've removed this task:
 [D][ ] remove this (by: Apr 1 2020 1200)
 Now you have 2 tasks in the list.
 Oops! There is no task numbered 0.
-Oops! The delete command needs a task number.
+Oops! Use: delete <task number>.
 Got it. I've added this task:
 [T][ ] add after error
 Now you have 3 tasks in the list.
@@ -403,6 +403,93 @@ Here are the tasks in your list:
 Bye. Hope to see you again soon!
 ```
 
+## Test case: Accept date-only deadlines and events
+
+Aim: Verify that times are optional, date-only values display without an invented time, and the save file preserves that choice.
+
+Match: contains
+
+### Inputs
+
+```text
+deadline submit form /by 2/12/2019
+event conference /from 3/12/2019 /to 4/12/2019
+event briefing /from 4/12/2019 0900 /to 4/12/2019
+list
+what's on: 4/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[D][ ] submit form (by: Dec 2 2019)
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+Now you have 3 tasks in the list.
+Here are the tasks in your list:
+1.[D][ ] submit form (by: Dec 2 2019)
+2.[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+3.[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+Here are the events and deadlines on Dec 4 2019:
+Events:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+[E][ ] briefing (from: Dec 4 2019 0900 to: Dec 4 2019)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
+### Expected file: data/duke.txt
+
+```text
+D | 0 | submit form | 02/12/2019
+E | 0 | conference | 03/12/2019 | 04/12/2019
+E | 0 | briefing | 04/12/2019 0900 | 04/12/2019
+```
+
+## Test case: Restore date-only task details from the save file
+
+Aim: Verify that date-only task details are restored without adding a time during a later session.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+D | 0 | submit form | 02/12/2019
+E | 0 | conference | 03/12/2019 | 04/12/2019
+```
+
+### Inputs
+
+```text
+list
+what's on: 04/12/2019
+bye
+```
+
+### Expected output
+
+```text
+Here are the tasks in your list:
+1.[D][ ] submit form (by: Dec 2 2019)
+2.[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+Here are the events and deadlines on Dec 4 2019:
+Events:
+[E][ ] conference (from: Dec 3 2019 to: Dec 4 2019)
+--------------------
+Deadlines:
+No deadlines on this date.
+Bye. Hope to see you again soon!
+```
+
 ## Test case: Reject invalid date and time values
 
 Aim: Verify that impossible dates, `2400`, five-digit times, and invalid event dates are rejected without adding tasks.
@@ -423,10 +510,10 @@ bye
 ### Expected output
 
 ```text
-Oops! Use date/time format DD/MM/YYYY HHmm with a valid calendar date.
-Oops! Use date/time format DD/MM/YYYY HHmm with a valid calendar date.
-Oops! Use date/time format DD/MM/YYYY HHmm with a valid calendar date.
-Oops! Use date/time format DD/MM/YYYY HHmm with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
+Oops! Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.
 Here are the tasks in your list:
 no tasks for now! go doomscroll
 Bye. Hope to see you again soon!
@@ -501,6 +588,7 @@ Match: contains
 
 ```text
 what's on
+what's on:
 what's on: 02/12/2019 extra
 what's on: 31/02/2019
 what's on: 02/12/2019
@@ -510,6 +598,7 @@ bye
 ### Expected output
 
 ```text
+Oops! Use: what's on: <date>.
 Oops! Use: what's on: <date>.
 Oops! Use date format DD/MM/YYYY with a valid calendar date.
 Oops! Use date format DD/MM/YYYY with a valid calendar date.
