@@ -22,6 +22,17 @@ class TestCase:
     commands: list[str]
     expected: str
     match_mode: str
+    initial_files: list["FileFixture"]
+    initial_directories: list[Path]
+    expected_files: list["FileFixture"]
+
+
+@dataclass
+class FileFixture:
+    """A file that is set up or checked as part of a test case."""
+
+    path: Path
+    content: str
 
 
 class ProgramRunError(RuntimeError):
@@ -39,8 +50,17 @@ TEST_CASE_PATTERN = re.compile(
 )
 BLOCK_PATTERN = re.compile(
     r"^### (?P<title>Inputs|Expected output)\s*\n"
-    r"```(?:text)?\s*\n(?P<content>.*?)\n```",
+    r"```(?:text)?\s*\n(?P<content>.*?)(?:\n)?^```$",
     re.MULTILINE | re.DOTALL,
+)
+FILE_BLOCK_PATTERN = re.compile(
+    r"^### (?P<kind>Initial|Expected) file:\s*(?P<path>.+?)\s*\n"
+    r"```(?:text)?\s*\n(?P<content>.*?)(?:\n)?^```$",
+    re.MULTILINE | re.DOTALL,
+)
+DIRECTORY_PATTERN = re.compile(
+    r"^### Initial directory:\s*(?P<path>.+?)\s*$",
+    re.MULTILINE,
 )
 
 
@@ -69,6 +89,22 @@ def parse_plan(plan_path: Path) -> list[TestCase]:
         if not commands or all(not command.strip() for command in commands):
             raise ValueError(f"Test case '{match.group('name').strip()}' has no inputs.")
 
+        file_fixtures = {"Initial": [], "Expected": []}
+        for file_block in FILE_BLOCK_PATTERN.finditer(body):
+            path = Path(file_block.group("path").strip())
+            if path.is_absolute() or ".." in path.parts:
+                raise ValueError("File fixture paths must be relative and stay within the test directory.")
+            file_fixtures[file_block.group("kind")].append(
+                FileFixture(path, file_block.group("content"))
+            )
+
+        initial_directories = []
+        for directory_match in DIRECTORY_PATTERN.finditer(body):
+            path = Path(directory_match.group("path").strip())
+            if path.is_absolute() or ".." in path.parts:
+                raise ValueError("Directory fixture paths must be relative and stay within the test directory.")
+            initial_directories.append(path)
+
         cases.append(
             TestCase(
                 name=match.group("name").strip(),
@@ -76,6 +112,9 @@ def parse_plan(plan_path: Path) -> list[TestCase]:
                 commands=commands,
                 expected=blocks["Expected output"],
                 match_mode=match_match.group(1) if match_match else "contains",
+                initial_files=file_fixtures["Initial"],
+                initial_directories=initial_directories,
+                expected_files=file_fixtures["Expected"],
             )
         )
 
@@ -90,12 +129,12 @@ def normalise_output(output: str) -> str:
     return output.rstrip("\n") + "\n" if output else ""
 
 
-def run_case(case: TestCase, classes_dir: Path, project_root: Path) -> str:
+def run_case(case: TestCase, classes_dir: Path, working_directory: Path) -> str:
     """Run one fresh Chausistant session and return its combined console output."""
     session_input = "\n".join(case.commands) + "\n"
     result = subprocess.run(
         ["java", "-cp", str(classes_dir), "Chausistant"],
-        cwd=project_root,
+        cwd=working_directory,
         input=session_input,
         text=True,
         stdout=subprocess.PIPE,
@@ -117,6 +156,35 @@ def expected_matches(case: TestCase, actual: str) -> bool:
     if case.match_mode == "exact":
         return actual == expected
     return expected in actual
+
+
+def write_initial_fixtures(case: TestCase, working_directory: Path) -> None:
+    """Create the test case's declared initial files and directories."""
+    for directory in case.initial_directories:
+        (working_directory / directory).mkdir(parents=True, exist_ok=True)
+    for fixture in case.initial_files:
+        file_path = working_directory / fixture.path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(normalise_output(fixture.content), encoding="utf-8")
+
+
+def find_file_failures(case: TestCase, working_directory: Path) -> list[str]:
+    """Return explanations for saved files that differ from their expected contents."""
+    failures = []
+    for fixture in case.expected_files:
+        file_path = working_directory / fixture.path
+        if not file_path.is_file():
+            failures.append(f"Expected file was not created: {fixture.path}")
+            continue
+
+        actual = file_path.read_text(encoding="utf-8")
+        if normalise_output(actual) != normalise_output(fixture.content):
+            failures.append(
+                f"Unexpected contents in {fixture.path}:\n"
+                f"Expected:\n{normalise_output(fixture.content)}"
+                f"Actual:\n{normalise_output(actual)}"
+            )
+    return failures
 
 
 def print_transcript(case: TestCase, actual: str) -> None:
@@ -166,9 +234,12 @@ def main() -> int:
             print(compile_result.stdout, end="")
             return 1
 
-        for case in cases:
+        for index, case in enumerate(cases, start=1):
+            working_directory = classes_dir / f"case-{index}"
+            working_directory.mkdir()
             try:
-                actual = run_case(case, classes_dir, project_root)
+                write_initial_fixtures(case, working_directory)
+                actual = run_case(case, classes_dir, working_directory)
             except ProgramRunError as error:
                 actual = error.output
                 print_transcript(case, actual)
@@ -223,6 +294,14 @@ def main() -> int:
                     ),
                     end="",
                 )
+                print("Testing terminated immediately; later cases were not run.")
+                return 1
+
+            file_failures = find_file_failures(case, working_directory)
+            if file_failures:
+                print("Result: FAIL")
+                print("File verification:")
+                print("\n".join(file_failures))
                 print("Testing terminated immediately; later cases were not run.")
                 return 1
 

@@ -2,7 +2,8 @@
 
 ## Project setup
 
-- Working directory: repository root
+- Each test runs in its own temporary working directory, so its save data
+  cannot affect other tests or the developer's local task file.
 - Java version: Java 25
 - Compile command: `javac --release 25 -d <temporary-classes> src/main/java/Chausistant.java`
 - Run command: `java -cp <temporary-classes> Chausistant`
@@ -11,6 +12,9 @@
   each expected-output block must appear verbatim in the complete console
   output while the banner remains visible in the transcript.
 - Testing stops at the first failed case.
+- A test may optionally include `### Initial file: <relative path>`,
+  `### Initial directory: <relative path>`, or `### Expected file: <relative path>`
+  blocks to set up or verify files in that test's working directory.
 
 ## Test case: Add a todo task
 
@@ -110,7 +114,7 @@ bye
 
 ```text
 Oops! The todo command needs a description.
-Oops! no one told me about this new command: "blah".
+Oops! Unknown command: blah
 Oops! Use: deadline <task> /by <date or time>.
 Oops! Use: event <task> /from <start> /to <end>.
 Got it. I've added this task:
@@ -160,7 +164,7 @@ Got it. I've added this task:
 [E][ ] club meeting (from: 2pm to: 3pm)
 Now you have 3 tasks in the list.
 Oops! Use: event <task> /from <start> /to <end>.
-Oops! no one told me about this new command: "blah".
+Oops! Unknown command: blah
 Here are the tasks in your list:
 1.[T][ ] read chapter
 2.[D][ ] plan trip (by: Friday)
@@ -287,5 +291,197 @@ Here are the tasks in your list:
 1.[T][ ] keep first
 2.[E][ ] keep last (from: 2pm to: 3pm)
 3.[T][ ] add after error
+Bye. Hope to see you again soon!
+```
+
+## Test case: Save each task-list change
+
+Aim: Verify that adding, marking, and deleting tasks completes normally while exercising the save path.
+
+Match: contains
+
+### Inputs
+
+```text
+todo read book
+deadline return book /by June 6th
+event project meeting /from Aug 6th 2pm /to 4pm
+mark 1
+delete 2
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[T][ ] read book
+Now you have 1 tasks in the list.
+Got it. I've added this task:
+[D][ ] return book (by: June 6th)
+Now you have 2 tasks in the list.
+Got it. I've added this task:
+[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+Now you have 3 tasks in the list.
+[T][X] read book
+Noted. I've removed this task:
+[D][ ] return book (by: June 6th)
+Now you have 2 tasks in the list.
+Bye. Hope to see you again soon!
+```
+
+### Expected file: data/duke.txt
+
+```text
+T | 1 | read book
+E | 0 | project meeting | Aug 6th 2pm | 4pm
+```
+
+## Test case: Load tasks from a previous session
+
+Aim: Verify that valid todo, deadline, and event entries are restored from the save file at startup.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+T | 1 | read book
+D | 0 | return book | June 6th
+E | 0 | project meeting | Aug 6th 2pm | 4pm
+```
+
+### Inputs
+
+```text
+list
+bye
+```
+
+### Expected output
+
+```text
+Here are the tasks in your list:
+1.[T][X] read book
+2.[D][ ] return book (by: June 6th)
+3.[E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+Bye. Hope to see you again soon!
+```
+
+## Test case: Start with an empty save file
+
+Aim: Verify that an empty save file is treated as an empty task list.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+
+```
+
+### Inputs
+
+```text
+list
+bye
+```
+
+### Expected output
+
+```text
+Here are the tasks in your list:
+no tasks for now! go doomscroll
+Bye. Hope to see you again soon!
+```
+
+## Test case: Preserve separator characters in saved tasks
+
+Aim: Verify that task descriptions containing pipe and backslash characters save without corrupting the file format.
+
+Match: contains
+
+### Inputs
+
+```text
+todo prepare | review \ archive
+bye
+```
+
+### Expected output
+
+```text
+Got it. I've added this task:
+[T][ ] prepare | review \ archive
+Now you have 1 tasks in the list.
+Bye. Hope to see you again soon!
+```
+
+### Expected file: data/duke.txt
+
+```text
+T | 0 | prepare \| review \\ archive
+```
+
+## Test case: Ignore malformed saved tasks
+
+Aim: Verify that blank and malformed save-file lines do not crash the program or hide valid tasks.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+T | 1 | keep this task
+T | 2 | invalid status
+D | 0 | missing deadline
+E | 0 | missing end | 2pm
+Z | 0 | unknown task
+T | 0 |
+```
+
+### Inputs
+
+```text
+list
+bye
+```
+
+### Expected output
+
+```text
+Oops! Ignoring malformed task on line 2: the status must be 0 or 1.
+Oops! Ignoring malformed task on line 3: the task has an incorrect number of fields.
+Oops! Ignoring malformed task on line 4: the task has an incorrect number of fields.
+Oops! Ignoring malformed task on line 5: unknown task type 'Z'.
+Oops! Ignoring malformed task on line 6: the todo description is missing.
+Here are the tasks in your list:
+1.[T][X] keep this task
+Bye. Hope to see you again soon!
+```
+
+## Test case: Recover when the save path is a directory
+
+Aim: Verify that loading and saving report a clear error and retain an empty in-memory list when the save path is a directory.
+
+Match: contains
+
+### Initial directory: data/duke.txt
+
+### Inputs
+
+```text
+todo task that cannot be saved
+list
+bye
+```
+
+### Expected output
+
+```text
+Oops! I could not load your tasks from data/duke.txt.
+Oops! I could not save your tasks to data/duke.txt.
+Here are the tasks in your list:
+no tasks for now! go doomscroll
 Bye. Hope to see you again soon!
 ```

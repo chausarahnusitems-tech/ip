@@ -1,4 +1,11 @@
+import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -15,6 +22,7 @@ public class Chausistant {
     private static final String MARK_COMMAND = "mark";
     private static final String UNMARK_COMMAND = "unmark";
     private static final String DELETE_COMMAND = "delete";
+    private static final Path SAVE_FILE = Path.of("data", "duke.txt");
 
     private enum Command {
         BYE("bye"),
@@ -38,7 +46,7 @@ public class Chausistant {
      * <p>The more specific task types inherit the common task state and
      * override {@link #printTask()} to include their own details.</p>
      */
-    private static class Task {
+    private abstract static class Task {
         private final String item;
         private boolean status;
 
@@ -51,6 +59,10 @@ public class Chausistant {
             this.status = status;
         }
 
+        boolean isCompleted() {
+            return status;
+        }
+
         protected String getItem() {
             return item;
         }
@@ -59,9 +71,15 @@ public class Chausistant {
             return status ? "[X]" : "[ ]";
         }
 
-        String printTask() {
-            return getStatusMark() + " " + item;
+        /** Returns the task's completion status in the save-file format. */
+        protected String getSaveStatus() {
+            return status ? "1" : "0";
         }
+
+        abstract String printTask();
+
+        /** Converts this task into one line for the save file. */
+        abstract String toSaveFormat();
     }
 
     /** A task without a deadline or event timing details. */
@@ -73,6 +91,11 @@ public class Chausistant {
         @Override
         String printTask() {
             return "[T]" + getStatusMark() + " " + getItem();
+        }
+
+        @Override
+        String toSaveFormat() {
+            return formatSaveLine("T", getSaveStatus(), getItem());
         }
     }
 
@@ -89,6 +112,11 @@ public class Chausistant {
         String printTask() {
             return "[D]" + getStatusMark() + " " + getItem()
                     + " (by: " + deadline + ")";
+        }
+
+        @Override
+        String toSaveFormat() {
+            return formatSaveLine("D", getSaveStatus(), getItem(), deadline);
         }
     }
 
@@ -108,6 +136,11 @@ public class Chausistant {
             return "[E]" + getStatusMark() + " " + getItem()
                     + " (from: " + from + " to: " + to + ")";
         }
+
+        @Override
+        String toSaveFormat() {
+            return formatSaveLine("E", getSaveStatus(), getItem(), from, to);
+        }
     }
 
     /**
@@ -117,6 +150,32 @@ public class Chausistant {
     private static class ChausistantException extends Exception {
         ChausistantException(String message) {
             super(message);
+        }
+    }
+
+    /** Represents a malformed task entry found in the save file. */
+    private static class StorageException extends Exception {
+        StorageException(String message) {
+            super(message);
+        }
+    }
+
+    /** Holds valid tasks and warnings found while loading the save file. */
+    private static class LoadedTasks {
+        private final ArrayList<Task> tasks;
+        private final ArrayList<String> warnings;
+
+        LoadedTasks(ArrayList<Task> tasks, ArrayList<String> warnings) {
+            this.tasks = tasks;
+            this.warnings = warnings;
+        }
+
+        ArrayList<Task> getTasks() {
+            return tasks;
+        }
+
+        ArrayList<String> getWarnings() {
+            return warnings;
         }
     }
 
@@ -205,10 +264,17 @@ public class Chausistant {
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
     private static void updateTaskStatus(String action, String details, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(action, details, todoList);
         Task task = todoList.get(taskIndex);
+        boolean wasCompleted = task.isCompleted();
         task.setStatus(MARK_COMMAND.equals(action));
+        try {
+            saveTasks(todoList);
+        } catch (IOException error) {
+            task.setStatus(wasCompleted);
+            throw error;
+        }
         System.out.println(task.printTask());
     }
 
@@ -220,9 +286,15 @@ public class Chausistant {
      * @throws ChausistantException if the task number is missing, invalid, or absent
      */
     private static void deleteTask(String details, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(DELETE_COMMAND, details, todoList);
         Task removedTask = todoList.remove(taskIndex);
+        try {
+            saveTasks(todoList);
+        } catch (IOException error) {
+            todoList.add(taskIndex, removedTask);
+            throw error;
+        }
         System.out.println("Noted. I've removed this task:");
         System.out.println(removedTask.printTask());
         System.out.println("Now you have " + todoList.size() + " tasks in the list.");
@@ -238,6 +310,151 @@ public class Chausistant {
         for (int i = 0; i < todoList.size(); i++) {
             System.out.println((i + 1) + "." + todoList.get(i).printTask());
         }
+    }
+
+    /**
+     * Writes the complete current task list to the application's save file.
+     *
+     * <p>Writing the entire list after each change keeps the storage format simple.</p>
+     *
+     * @param todoList the task list to save
+     * @throws IOException if the data directory or save file cannot be written
+     */
+    private static void saveTasks(ArrayList<Task> todoList) throws IOException {
+        Path dataDirectory = SAVE_FILE.getParent();
+        Files.createDirectories(dataDirectory);
+        List<String> savedTasks = todoList.stream().map(Task::toSaveFormat).toList();
+        Path temporaryFile = Files.createTempFile(dataDirectory, "duke-", ".tmp");
+        try {
+            Files.write(temporaryFile, savedTasks, StandardCharsets.UTF_8);
+            replaceSaveFile(temporaryFile);
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
+    }
+
+    /** Replaces the save file without leaving a partially written task list behind. */
+    private static void replaceSaveFile(Path temporaryFile) throws IOException {
+        try {
+            Files.move(temporaryFile, SAVE_FILE, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException error) {
+            Files.move(temporaryFile, SAVE_FILE, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /**
+     * Reads previously saved tasks from the application's save file.
+     *
+     * @return the saved tasks, or an empty list when no save file exists yet
+     * @throws IOException if an existing save file cannot be read
+     */
+    private static LoadedTasks loadTasks() throws IOException {
+        ArrayList<Task> todoList = new ArrayList<>();
+        ArrayList<String> warnings = new ArrayList<>();
+        if (Files.notExists(SAVE_FILE)) {
+            return new LoadedTasks(todoList, warnings);
+        }
+        if (!Files.isRegularFile(SAVE_FILE)) {
+            throw new IOException("The save path is not a regular file.");
+        }
+
+        List<String> savedTasks = Files.readAllLines(SAVE_FILE, StandardCharsets.UTF_8);
+        for (int index = 0; index < savedTasks.size(); index++) {
+            String savedTask = savedTasks.get(index);
+            if (savedTask.isBlank()) {
+                continue;
+            }
+
+            try {
+                todoList.add(createTaskFromSaveFormat(savedTask));
+            } catch (StorageException error) {
+                warnings.add("Ignoring malformed task on line " + (index + 1) + ": "
+                        + error.getMessage());
+            }
+        }
+        return new LoadedTasks(todoList, warnings);
+    }
+
+    /**
+     * Recreates a task from one valid line in the save-file format.
+     *
+     * @param savedTask one line previously produced by {@link Task#toSaveFormat()}
+     * @return the task represented by that line
+     */
+    private static Task createTaskFromSaveFormat(String savedTask) throws StorageException {
+        List<String> fields = splitSaveFields(savedTask);
+        if (fields.size() < 2) {
+            throw new StorageException("the task type or status is missing.");
+        }
+        if (!fields.get(1).equals("0") && !fields.get(1).equals("1")) {
+            throw new StorageException("the status must be 0 or 1.");
+        }
+
+        Task task = switch (fields.get(0)) {
+            case "T" -> new TodoTask(getSavedField(fields, 3, 2, "todo description"));
+            case "D" -> new DeadlineTask(getSavedField(fields, 4, 2, "deadline description"),
+                    getSavedField(fields, 4, 3, "deadline"));
+            case "E" -> new EventTask(getSavedField(fields, 5, 2, "event description"),
+                    getSavedField(fields, 5, 3, "event start time"),
+                    getSavedField(fields, 5, 4, "event end time"));
+            default -> throw new StorageException("unknown task type '" + fields.get(0) + "'.");
+        };
+        task.setStatus("1".equals(fields.get(1)));
+        return task;
+    }
+
+    /** Returns one required non-empty field from a saved task after validating its field count. */
+    private static String getSavedField(List<String> fields, int expectedFieldCount, int fieldIndex,
+                                        String fieldName) throws StorageException {
+        if (fields.size() != expectedFieldCount) {
+            throw new StorageException("the task has an incorrect number of fields.");
+        }
+        String value = fields.get(fieldIndex);
+        if (value.isBlank()) {
+            throw new StorageException("the " + fieldName + " is missing.");
+        }
+        return value;
+    }
+
+    /** Splits a save-file line while preserving escaped pipe and backslash characters. */
+    private static List<String> splitSaveFields(String savedTask) {
+        ArrayList<String> fields = new ArrayList<>();
+        StringBuilder currentField = new StringBuilder();
+        for (int index = 0; index < savedTask.length(); index++) {
+            char character = savedTask.charAt(index);
+            if (character == '\\' && index + 1 < savedTask.length()) {
+                char nextCharacter = savedTask.charAt(index + 1);
+                if (nextCharacter == '\\' || nextCharacter == '|') {
+                    currentField.append(nextCharacter);
+                    index++;
+                    continue;
+                }
+            }
+
+            if (character == '|') {
+                fields.add(currentField.toString().strip());
+                currentField.setLength(0);
+            } else {
+                currentField.append(character);
+            }
+        }
+        fields.add(currentField.toString().strip());
+        return fields;
+    }
+
+    /** Escapes one field so it cannot be mistaken for a save-file separator. */
+    private static String escapeSaveField(String field) {
+        return field.replace("\\", "\\\\").replace("|", "\\|");
+    }
+
+    /** Formats fields as one task line for the save file. */
+    private static String formatSaveLine(String... fields) {
+        ArrayList<String> escapedFields = new ArrayList<>();
+        for (String field : fields) {
+            escapedFields.add(escapeSaveField(field));
+        }
+        return String.join(" | ", escapedFields);
     }
 
     /**
@@ -279,7 +496,7 @@ public class Chausistant {
      * @throws ChausistantException if the command cannot be completed
      */
     private static boolean processCommand(String command, ArrayList<Task> todoList)
-            throws ChausistantException {
+            throws ChausistantException, IOException {
         String[] parts = command.split("\\s+", 2);
         String action = parts[0].toLowerCase(Locale.ROOT);
         String details = parts.length == 2 ? parts[1].strip() : "";
@@ -313,6 +530,12 @@ public class Chausistant {
             case TODO, DEADLINE, EVENT -> {
                 Task taskItem = createTask(action, details);
                 todoList.add(taskItem);
+                try {
+                    saveTasks(todoList);
+                } catch (IOException error) {
+                    todoList.remove(todoList.size() - 1);
+                    throw error;
+                }
                 System.out.println("Got it. I've added this task:");
                 System.out.println(taskItem.printTask());
                 System.out.println("Now you have " + todoList.size() + " tasks in the list.");
@@ -342,6 +565,15 @@ public class Chausistant {
         System.out.println(banner);
 
         ArrayList<Task> todoList = new ArrayList<>();
+        try {
+            LoadedTasks loadedTasks = loadTasks();
+            todoList = loadedTasks.getTasks();
+            for (String warning : loadedTasks.getWarnings()) {
+                System.out.println("Oops! " + warning);
+            }
+        } catch (IOException error) {
+            System.out.println("Oops! I could not load your tasks from " + SAVE_FILE + ".");
+        }
 
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
@@ -358,6 +590,8 @@ public class Chausistant {
                     }
                 } catch (ChausistantException error) {
                     System.out.println("Oops! " + error.getMessage());
+                } catch (IOException error) {
+                    System.out.println("Oops! I could not save your tasks to " + SAVE_FILE + ".");
                 }
             }
         }
