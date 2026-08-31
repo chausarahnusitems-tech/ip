@@ -7,9 +7,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -191,43 +188,6 @@ public class Chausistant {
     }
 
     /**
-     * Displays events overlapping a date, followed by deadlines due that day.
-     *
-     * <p>Events are considered to be on every date touched by their interval.
-     * Each section is sorted by its relevant start or due time, and the divider
-     * keeps events visually separate from deadlines.</p>
-     *
-     * @param dateText the date entered after {@code what's on:}
-     * @param todoList the list of tasks to search
-     * @throws ChausistantException if the requested date is invalid
-     */
-    private static void displayTasksOnDate(String dateText, TaskList todoList, Ui ui)
-            throws ChausistantException {
-        LocalDate date = parseInputDate(dateText);
-        ArrayList<EventTask> events = new ArrayList<>();
-        ArrayList<DeadlineTask> deadlines = new ArrayList<>();
-
-        for (Task task : todoList.getTasks()) {
-            if (task instanceof EventTask event
-                    && !event.getFrom().toLocalDate().isAfter(date)
-                    && !event.getTo().toLocalDate().isBefore(date)) {
-                events.add(event);
-            } else if (task instanceof DeadlineTask deadline
-                    && deadline.getDeadline().toLocalDate().equals(date)) {
-                deadlines.add(deadline);
-            }
-        }
-
-        events.sort(Comparator.comparing(EventTask::getFrom));
-        deadlines.sort(Comparator.comparing(DeadlineTask::getDeadline));
-
-        String displayDate = Task.formatDateForDisplay(date);
-        List<String> eventDetails = events.stream().map(EventTask::printTask).toList();
-        List<String> deadlineDetails = deadlines.stream().map(DeadlineTask::printTask).toList();
-        ui.showSchedule(displayDate, eventDetails, deadlineDetails);
-    }
-
-    /**
      * Checks that a command that takes no details was entered on its own.
      *
      * @param action the command being validated
@@ -273,7 +233,8 @@ public class Chausistant {
             if (dateText.isBlank()) {
                 throw new ChausistantException(WHAT_IS_ON_ERROR);
             }
-            displayTasksOnDate(dateText, todoList, ui);
+            Command whatsOnCommand = new WhatsOnCommand(parseInputDate(dateText));
+            whatsOnCommand.execute(todoList, ui, storage);
             return true;
         }
         if (command.length() >= 6 && command.regionMatches(true, 0, "what's", 0, 6)
