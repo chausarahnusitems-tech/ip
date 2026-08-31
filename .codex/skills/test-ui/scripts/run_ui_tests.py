@@ -214,6 +214,10 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory(prefix="chausistant-ui-test-") as temp_dir:
         classes_dir = Path(temp_dir)
+        source_files = sorted((project_root / "src/main/java").glob("*.java"))
+        if not source_files:
+            print("TEST SESSION FAILED: no Java source files were found.")
+            return 1
         compile_result = subprocess.run(
             [
                 "javac",
@@ -221,7 +225,7 @@ def main() -> int:
                 "25",
                 "-d",
                 str(classes_dir),
-                "src/main/java/Chausistant.java",
+                *[str(source_file.relative_to(project_root)) for source_file in source_files],
             ],
             cwd=project_root,
             text=True,
