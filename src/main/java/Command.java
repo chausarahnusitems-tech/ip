@@ -6,8 +6,8 @@
  */
 public abstract class Command {
 
-    /** Performs this command's user-facing action. */
-    public abstract void execute(Ui ui);
+    /** Performs this command's user-facing action using the current task list. */
+    public abstract void execute(TaskList tasks, Ui ui);
 
     /** Returns whether executing this command should end the chatbot session. */
     public boolean isExit() {

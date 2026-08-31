@@ -2,7 +2,7 @@
 public class ExitCommand extends Command {
 
     @Override
-    public void execute(Ui ui) {
+    public void execute(TaskList tasks, Ui ui) {
         ui.showGoodbye();
     }
 

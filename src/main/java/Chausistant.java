@@ -303,11 +303,6 @@ public class Chausistant {
         ui.showTaskDeleted(removedTask.printTask(), todoList.size());
     }
 
-    /** Displays every task currently stored in the task list. */
-    private static void displayTasks(TaskList todoList, Ui ui) {
-        ui.showTaskList(todoList.getTasks().stream().map(Task::printTask).toList());
-    }
-
     /**
      * Displays events overlapping a date, followed by deadlines due that day.
      *
@@ -572,13 +567,14 @@ public class Chausistant {
             case BYE -> {
                 validateNoDetails(validatedAction, details);
                 Command exitCommand = new ExitCommand();
-                exitCommand.execute(ui);
+                exitCommand.execute(todoList, ui);
                 return !exitCommand.isExit();
             }
 
             case LIST -> {
                 validateNoDetails(validatedAction, details);
-                displayTasks(todoList, ui);
+                Command listCommand = new ListCommand();
+                listCommand.execute(todoList, ui);
                 return true;
             }
 
