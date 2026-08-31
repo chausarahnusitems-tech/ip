@@ -191,56 +191,6 @@ public class Chausistant {
     }
 
     /**
-     * Converts and validates a user-entered task number into a TaskList index.
-     *
-     * @param action the command that needs a task number
-     * @param details the task number entered by the user
-     * @param todoList the list containing the tasks
-     * @return the zero-based index of the requested task
-     * @throws ChausistantException if the task number is missing, invalid, or absent
-     */
-    private static int getTaskIndex(CommandType action, String details, TaskList todoList)
-            throws ChausistantException {
-        if (details.isBlank()) {
-            throw new ChausistantException("Use: " + action.keyword + " <task number>.");
-        }
-
-        final int taskNumber;
-        try {
-            taskNumber = Integer.parseInt(details);
-        } catch (NumberFormatException error) {
-            throw new ChausistantException("A task number must be a whole number.");
-        }
-
-        int taskIndex = taskNumber - 1;
-        if (taskIndex < 0 || taskIndex >= todoList.size()) {
-            throw new ChausistantException("There is no task numbered " + taskNumber + ".");
-        }
-
-        return taskIndex;
-    }
-
-    /**
-     * Removes the numbered task and reports the task that was removed.
-     *
-     * @param details the task number entered by the user
-     * @param todoList the list containing the tasks
-     * @throws ChausistantException if the task number is missing, invalid, or absent
-     */
-    private static void deleteTask(String details, TaskList todoList, Ui ui, Storage storage)
-            throws ChausistantException, IOException {
-        int taskIndex = getTaskIndex(CommandType.DELETE, details, todoList);
-        Task removedTask = todoList.remove(taskIndex);
-        try {
-            storage.save(todoList);
-        } catch (IOException error) {
-            todoList.add(taskIndex, removedTask);
-            throw error;
-        }
-        ui.showTaskDeleted(removedTask.printTask(), todoList.size());
-    }
-
-    /**
      * Displays events overlapping a date, followed by deadlines due that day.
      *
      * <p>Events are considered to be on every date touched by their interval.
@@ -361,7 +311,8 @@ public class Chausistant {
 
 
             case DELETE -> {
-                deleteTask(details, todoList, ui, storage);
+                Command deleteCommand = new DeleteCommand(details);
+                deleteCommand.execute(todoList, ui, storage);
                 return true;
             }
 
