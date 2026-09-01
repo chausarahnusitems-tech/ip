@@ -37,7 +37,8 @@ test {
 }
 
 application {
-    mainClass = 'seedu.duke.Duke'
+    // This class becomes the JAR manifest's Main-Class entry.
+    mainClass = 'chausistant.Chausistant'
 }
 
 jar {
