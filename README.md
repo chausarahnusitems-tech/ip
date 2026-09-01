@@ -27,3 +27,30 @@ Prerequisites: JDK 25, update Intellij to the most recent version.
    ```
 
 **Warning:** Keep the `src\main\java` folder as the root folder for Java files (i.e., don't rename those folders or move Java files to another folder outside of this folder path), as this is the default location some tools (e.g., Gradle) expect to find Java files.
+
+## Creating and running the executable JAR
+
+This project uses Gradle's `shadowJar` task to create one executable JAR containing
+the application and its runtime dependencies. Use JDK 25 to build and run it.
+
+1. From the project directory, create the JAR:
+
+   ```bash
+   sdk use java 25.0.3.fx-zulu
+   ./gradlew shadowJar
+   ```
+
+1. Locate the generated file at `build/libs/duke.jar`.
+
+1. To test it as a user would, copy `duke.jar` into an empty folder, open a
+   terminal in that folder, and run:
+
+   ```bash
+   java -jar "duke.jar"
+   ```
+
+   The application stores its task data in `data/duke.txt`, relative to the
+   folder where the JAR is run.
+
+The generated JAR is intentionally excluded by `.gitignore`; do not commit it.
+To distribute a version, attach `build/libs/duke.jar` to a GitHub Release instead.
