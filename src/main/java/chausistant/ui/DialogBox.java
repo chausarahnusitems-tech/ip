@@ -1,7 +1,12 @@
 package chausistant.ui;
 
+import java.io.IOException;
+import java.net.URL;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -13,24 +18,36 @@ import javafx.scene.layout.HBox;
  * Displays a chat message next to the speaker's avatar.
  */
 public class DialogBox extends HBox {
-    private static final double IMAGE_SIZE = 100.0;
+    private static final String DIALOG_BOX_FXML = "/view/DialogBox.fxml";
+
+    @FXML
+    private Label dialog;
+    @FXML
+    private ImageView displayPicture;
 
     /**
-     * Creates a dialog box containing the supplied message and avatar.
+     * Creates a dialog box containing the supplied message and avatar from FXML.
      *
      * @param text message to display
      * @param image avatar to display beside the message
      */
-    public DialogBox(String text, Image image) {
-        Label textLabel = new Label(text);
-        ImageView displayPicture = new ImageView(image);
+    private DialogBox(String text, Image image) {
+        URL fxmlLocation = DialogBox.class.getResource(DIALOG_BOX_FXML);
+        if (fxmlLocation == null) {
+            throw new IllegalStateException("Missing FXML resource: " + DIALOG_BOX_FXML);
+        }
 
-        textLabel.setWrapText(true);
-        displayPicture.setFitWidth(IMAGE_SIZE);
-        displayPicture.setFitHeight(IMAGE_SIZE);
-        setAlignment(Pos.TOP_RIGHT);
+        FXMLLoader fxmlLoader = new FXMLLoader(fxmlLocation);
+        fxmlLoader.setController(this);
+        fxmlLoader.setRoot(this);
+        try {
+            fxmlLoader.load();
+        } catch (IOException error) {
+            throw new IllegalStateException("Unable to load a dialog box.", error);
+        }
 
-        getChildren().addAll(textLabel, displayPicture);
+        dialog.setText(text);
+        displayPicture.setImage(image);
     }
 
     /** Creates a right-aligned dialog box for a user message. */
