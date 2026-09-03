@@ -65,6 +65,7 @@ public class DialogBox extends HBox {
     /** Flips the dialog so the image is on the left and the message is on the right. */
     private void flip() {
         setAlignment(Pos.TOP_LEFT);
+        dialog.getStyleClass().add("reply-label");
         ObservableList<Node> children = FXCollections.observableArrayList(getChildren());
         FXCollections.reverse(children);
         getChildren().setAll(children);

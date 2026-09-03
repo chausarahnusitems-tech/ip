@@ -34,7 +34,7 @@ public class Main extends Application {
             controller.setChausistant(chausistant);
 
             stage.setTitle("Chausistant");
-            stage.setResizable(false);
+            stage.setResizable(true);
             stage.setMinWidth(WINDOW_WIDTH);
             stage.setMinHeight(WINDOW_HEIGHT);
             stage.setScene(new Scene(mainWindow));
