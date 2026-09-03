@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.Test;
+
 import chausistant.command.AddCommand;
 import chausistant.command.DeleteCommand;
 import chausistant.command.ExitCommand;
@@ -14,7 +16,6 @@ import chausistant.command.MarkCommand;
 import chausistant.command.UnmarkCommand;
 import chausistant.command.WhatsOnCommand;
 import chausistant.exception.ChausistantException;
-import org.junit.jupiter.api.Test;
 
 /** Tests command parsing and input validation at the parser's public boundary. */
 class ParserTest {
@@ -99,8 +100,7 @@ class ParserTest {
     @Test
     void parseImpossibleDeadlineDateThrowsDateError() {
         ChausistantException error = assertThrows(
-                ChausistantException.class,
-                () -> Parser.parse("deadline report /by 31/02/2019"));
+                ChausistantException.class, () -> Parser.parse("deadline report /by 31/02/2019"));
 
         assertEquals(
                 "Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.",
@@ -110,8 +110,7 @@ class ParserTest {
     @Test
     void parseDeadlineWithInvalidTimeThrowsDateError() {
         ChausistantException error = assertThrows(
-                ChausistantException.class,
-                () -> Parser.parse("deadline report /by 2/12/2019 2400"));
+                ChausistantException.class, () -> Parser.parse("deadline report /by 2/12/2019 2400"));
 
         assertEquals(
                 "Use date format DD/MM/YYYY, optionally followed by HHmm, with a valid calendar date.",
@@ -121,8 +120,7 @@ class ParserTest {
     @Test
     void parseEventWithoutEndDateThrowsUsageError() {
         ChausistantException error = assertThrows(
-                ChausistantException.class,
-                () -> Parser.parse("event meeting /from 2/12/2019"));
+                ChausistantException.class, () -> Parser.parse("event meeting /from 2/12/2019"));
 
         assertEquals("Use: event <task> /from <date> [HHmm] /to <date> [HHmm].",
                 error.getMessage());

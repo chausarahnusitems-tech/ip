@@ -1,11 +1,12 @@
 package chausistant.command;
 
+import java.io.IOException;
+
 import chausistant.exception.ChausistantException;
 import chausistant.storage.Storage;
 import chausistant.task.Task;
 import chausistant.task.TaskList;
 import chausistant.ui.Ui;
-import java.io.IOException;
 
 /** Command that removes one task from the task list. */
 public class DeleteCommand extends NumberedTaskCommand {

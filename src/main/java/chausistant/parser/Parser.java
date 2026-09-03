@@ -1,5 +1,16 @@
 package chausistant.parser;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import chausistant.command.AddCommand;
 import chausistant.command.Command;
 import chausistant.command.DeleteCommand;
@@ -14,16 +25,6 @@ import chausistant.task.DeadlineTask;
 import chausistant.task.EventTask;
 import chausistant.task.Task;
 import chausistant.task.TodoTask;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Converts a user-entered command line into an executable command object.
