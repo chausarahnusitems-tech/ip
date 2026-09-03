@@ -19,6 +19,7 @@ import javafx.stage.Stage;
  */
 public class Main extends Application {
     private static final String USER_IMAGE_PATH = "/images/DaUser.png";
+    private static final String CHAUSISTANT_IMAGE_PATH = "/images/DaDuke.png";
     private static final double WINDOW_WIDTH = 400.0;
     private static final double WINDOW_HEIGHT = 600.0;
     private static final double DIALOG_PANE_WIDTH = 385.0;
@@ -27,25 +28,28 @@ public class Main extends Application {
     private static final double SEND_BUTTON_WIDTH = 55.0;
     private static final double EDGE_OFFSET = 1.0;
 
+    private final Chausistant chausistant = new Chausistant();
     private final Image userImage = loadImage(USER_IMAGE_PATH);
+    private final Image chausistantImage = loadImage(CHAUSISTANT_IMAGE_PATH);
+
+    private VBox dialogContainer;
+    private TextField userInput;
 
     @Override
     public void start(Stage stage) {
         ScrollPane scrollPane = new ScrollPane();
-        VBox dialogContainer = new VBox();
+        dialogContainer = new VBox();
         scrollPane.setContent(dialogContainer);
 
-        TextField userInput = new TextField();
+        userInput = new TextField();
         Button sendButton = new Button("Send");
-
-        DialogBox dialogBox = new DialogBox("Hello!", userImage);
-        dialogContainer.getChildren().add(dialogBox);
 
         AnchorPane mainLayout = new AnchorPane();
         mainLayout.getChildren().addAll(scrollPane, userInput, sendButton);
 
         configureStage(stage, mainLayout);
         configureControls(scrollPane, dialogContainer, userInput, sendButton);
+        configureInputHandling(scrollPane, sendButton);
 
         Scene scene = new Scene(mainLayout);
         stage.setScene(scene);
@@ -79,6 +83,29 @@ public class Main extends Application {
         AnchorPane.setRightAnchor(sendButton, EDGE_OFFSET);
         AnchorPane.setLeftAnchor(userInput, EDGE_OFFSET);
         AnchorPane.setBottomAnchor(userInput, EDGE_OFFSET);
+    }
+
+    /** Configures the controls that submit a user message. */
+    private void configureInputHandling(ScrollPane scrollPane, Button sendButton) {
+        sendButton.setOnMouseClicked(event -> handleUserInput());
+        userInput.setOnAction(event -> handleUserInput());
+        dialogContainer.heightProperty().addListener((observable, oldHeight, newHeight) ->
+                scrollPane.setVvalue(1.0));
+    }
+
+    /** Creates dialog boxes for one user message and Chausistant's response. */
+    private void handleUserInput() {
+        String userText = userInput.getText().strip();
+        if (userText.isBlank()) {
+            userInput.clear();
+            return;
+        }
+
+        String chausistantText = chausistant.getResponse(userText);
+        dialogContainer.getChildren().addAll(
+                DialogBox.getUserDialog(userText, userImage),
+                DialogBox.getChausistantDialog(chausistantText, chausistantImage));
+        userInput.clear();
     }
 
     /** Loads an image resource packaged with the application. */
