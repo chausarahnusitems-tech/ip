@@ -14,9 +14,9 @@ import java.util.Locale;
 public class TaskList {
     private final ArrayList<Task> tasks;
 
-    /** Creates an empty task list. */
-    public TaskList() {
-        tasks = new ArrayList<>();
+    /** Creates a task list containing the supplied tasks in the same order. */
+    public TaskList(Task... tasks) {
+        this.tasks = new ArrayList<>(List.of(tasks));
     }
 
     /** Creates a task list containing the supplied tasks in the same order. */
