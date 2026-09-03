@@ -30,21 +30,28 @@ public class Ui {
 
     /** Displays the chatbot's startup banner. */
     public void showWelcome() {
-        String banner = """
-                 Hello! I'm 
-                 
-                 ████ █   █  ███  █   █  ████ █████  ████ █████  ███  █   █ █████
-                █     █   █ █   █ █   █ █       █   █       █   █   █ ██  █   █
-                █     █   █ █   █ █   █ █       █   █       █   █   █ ██  █   █
-                █     █████ █████ █   █  ███    █    ███    █   █████ █ █ █   █
-                █     █   █ █   █ █   █    █    █      █    █   █   █ █  ██   █
-                █     █   █ █   █ █   █    █    █      █    █   █   █ █  ██   █
-                 ████ █   █ █   █  ███  ████  █████ ████    █   █   █ █   █   █
-
-                                      chausistant
-                                      
-                What can I do for you today!  
-                """;
+        String banner = String.join(System.lineSeparator(),
+                " Hello! I'm",
+                "",
+                " ████ █   █  ███  █   █  ████ █████"
+                        + "  ████ █████  ███  █   █ █████",
+                "█     █   █ █   █ █   █ █       █   █"
+                        + "       █   █   █ ██  █   █",
+                "█     █   █ █   █ █   █ █       █   █"
+                        + "       █   █   █ ██  █   █",
+                "█     █████ █████ █   █  ███    █"
+                        + "    ███    █   █████ █ █ █   █",
+                "█     █   █ █   █ █   █    █    █"
+                        + "      █    █   █   █ █  ██   █",
+                "█     █   █ █   █ █   █    █    █"
+                        + "      █    █   █   █ █  ██   █",
+                " ████ █   █ █   █  ███  ████  █████"
+                        + " ████    █   █   █ █   █ █   █",
+                "",
+                "                      chausistant",
+                "",
+                "What can I do for you today!")
+                + System.lineSeparator();
         System.out.println(banner);
     }
 
