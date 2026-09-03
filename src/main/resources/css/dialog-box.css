@@ -1,0 +1,19 @@
+.label {
+    -fx-background-color: linear-gradient(to bottom right, #c7f2d3, #a8e6cf);
+    -fx-background-radius: 1em 1em 0 1em;
+    -fx-border-color: #5fa878;
+    -fx-border-radius: 1em 1em 0 1em;
+    -fx-border-width: 1px;
+    -fx-padding: 8px 10px;
+}
+
+.reply-label {
+    -fx-background-color: linear-gradient(to bottom right, #fff1c7, #f8d98b);
+    -fx-background-radius: 1em 1em 1em 0;
+    -fx-border-color: #c69235;
+    -fx-border-radius: 1em 1em 1em 0;
+}
+
+#displayPicture {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0.35, 2, 2);
+}

@@ -2,6 +2,7 @@ package chausistant.ui;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Consumer;
 
 /**
  * Handles all console input and output for the Chausistant chatbot.
@@ -12,10 +13,22 @@ import java.util.Scanner;
  */
 public class Ui {
     private final Scanner scanner;
+    private final Consumer<String> output;
 
     /** Creates a UI that reads commands from the standard input stream. */
     public Ui() {
         scanner = new Scanner(System.in);
+        output = System.out::println;
+    }
+
+    /**
+     * Creates a UI that appends its output to the supplied response.
+     *
+     * @param response response that receives formatted chatbot messages
+     */
+    public Ui(StringBuilder response) {
+        scanner = new Scanner("");
+        output = message -> response.append(message).append(System.lineSeparator());
     }
 
     /** Returns whether the user has another command to enter. */
@@ -52,38 +65,38 @@ public class Ui {
                 "",
                 "What can I do for you today!")
                 + System.lineSeparator();
-        System.out.println(banner);
+        show(banner);
     }
 
     /** Displays an error message with the chatbot's standard error prefix. */
     public void showError(String message) {
-        System.out.println("Oops! " + message);
+        show("Oops! " + message);
     }
 
     /** Displays the task created by a successful add command. */
     public void showTaskAdded(String task, int taskCount) {
-        System.out.println("Got it. I've added this task:");
-        System.out.println(task);
-        System.out.println("Now you have " + taskCount + " tasks in the list.");
+        show("Got it. I've added this task:");
+        show(task);
+        show("Now you have " + taskCount + " tasks in the list.");
     }
 
     /** Displays the task affected by a successful mark or unmark command. */
     public void showTaskStatus(String task) {
-        System.out.println(task);
+        show(task);
     }
 
     /** Displays the task removed by a successful delete command. */
     public void showTaskDeleted(String task, int taskCount) {
-        System.out.println("Noted. I've removed this task:");
-        System.out.println(task);
-        System.out.println("Now you have " + taskCount + " tasks in the list.");
+        show("Noted. I've removed this task:");
+        show(task);
+        show("Now you have " + taskCount + " tasks in the list.");
     }
 
     /** Displays every task currently in the task list. */
     public void showTaskList(List<String> tasks) {
-        System.out.println("Here are the tasks in your list:");
+        show("Here are the tasks in your list:");
         if (tasks.isEmpty()) {
-            System.out.println("no tasks for now! go doomscroll");
+            show("no tasks for now! go doomscroll");
         }
 
         showNumberedTasks(tasks);
@@ -91,9 +104,9 @@ public class Ui {
 
     /** Displays tasks whose descriptions match a user-provided search phrase. */
     public void showMatchingTasks(List<String> tasks) {
-        System.out.println("Here are the matching tasks in your list:");
+        show("Here are the matching tasks in your list:");
         if (tasks.isEmpty()) {
-            System.out.println("No matching tasks found.");
+            show("No matching tasks found.");
             return;
         }
 
@@ -103,31 +116,36 @@ public class Ui {
     /** Displays each supplied task on its own one-based numbered line. */
     private void showNumberedTasks(List<String> tasks) {
         for (int index = 0; index < tasks.size(); index++) {
-            System.out.println((index + 1) + "." + tasks.get(index));
+            show((index + 1) + "." + tasks.get(index));
         }
     }
 
     /** Displays scheduled events and deadlines for one requested date. */
     public void showSchedule(String date, List<String> events, List<String> deadlines) {
-        System.out.println("Here are the events and deadlines on " + date + ":");
-        System.out.println("Events:");
+        show("Here are the events and deadlines on " + date + ":");
+        show("Events:");
         if (events.isEmpty()) {
-            System.out.println("No events on this date.");
+            show("No events on this date.");
         } else {
-            events.forEach(System.out::println);
+            events.forEach(this::show);
         }
 
-        System.out.println("--------------------");
-        System.out.println("Deadlines:");
+        show("--------------------");
+        show("Deadlines:");
         if (deadlines.isEmpty()) {
-            System.out.println("No deadlines on this date.");
+            show("No deadlines on this date.");
         } else {
-            deadlines.forEach(System.out::println);
+            deadlines.forEach(this::show);
         }
     }
 
     /** Displays the chatbot's farewell message. */
     public void showGoodbye() {
-        System.out.println("Bye. Hope to see you again soon!");
+        show("Bye. Hope to see you again soon!");
+    }
+
+    /** Sends one formatted message to this UI's output destination. */
+    private void show(String message) {
+        output.accept(message);
     }
 }
