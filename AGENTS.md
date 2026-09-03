@@ -28,6 +28,19 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
 
+## SE-EDU Java coding standard
+
+For every Java source or test change, load and follow the project skill at
+`.codex/skills/seedu-java-coding-standard/SKILL.md`. This is mandatory for all
+code in this project and implements the required basic and intermediate
+[SE-EDU Java coding standard](https://se-education.org/guides/conventions/java/intermediate.html).
+
+## SE-EDU Git standard
+
+For every proposed or created commit, load and follow the project skill at
+`.codex/skills/seedu-git-standard/SKILL.md`. This is mandatory for all future
+commits in this project and implements the [SE-EDU Git conventions](https://se-education.org/guides/conventions/git.html).
+
 ## JUnit test coverage
 
 Maintain JUnit coverage for roughly the top 50% of the project's highest-value methods, prioritizing complex, core, or critical business logic over simple accessors and boilerplate.
