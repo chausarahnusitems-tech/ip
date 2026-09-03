@@ -29,6 +29,7 @@ public class EventTask extends Task {
         return to;
     }
 
+    /** Returns this event task in the chatbot's display format. */
     @Override
     public String printTask() {
         return "[E]" + getStatusMark() + " " + getItem()
@@ -36,6 +37,7 @@ public class EventTask extends Task {
                 + " to: " + formatDateTimeForDisplay(to, hasToTime) + ")";
     }
 
+    /** Returns this event task as one save-file line. */
     @Override
     public String toSaveFormat() {
         return formatSaveLine("E", getSaveStatus(), getItem(),

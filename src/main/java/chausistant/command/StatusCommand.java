@@ -25,6 +25,7 @@ public abstract class StatusCommand extends NumberedTaskCommand {
         this.completedStatus = completedStatus;
     }
 
+    /** Updates the selected task's status, saves the change, and displays the task. */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage)
             throws ChausistantException, IOException {

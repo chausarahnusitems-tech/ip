@@ -15,6 +15,7 @@ public class AddCommand extends Command {
         this.task = task;
     }
 
+    /** Adds the task, saves the updated list, and shows a confirmation. */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) throws IOException {
         tasks.add(task);

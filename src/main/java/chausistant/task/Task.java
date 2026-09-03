@@ -26,6 +26,7 @@ public abstract class Task {
     private final String item;
     private boolean status;
 
+    /** Creates an incomplete task with the supplied description. */
     protected Task(String item) {
         this.item = item;
         this.status = false;
@@ -41,10 +42,12 @@ public abstract class Task {
         return status;
     }
 
+    /** Returns this task's description. */
     protected String getItem() {
         return item;
     }
 
+    /** Returns the completion marker used in the task display. */
     protected String getStatusMark() {
         return status ? "[X]" : "[ ]";
     }

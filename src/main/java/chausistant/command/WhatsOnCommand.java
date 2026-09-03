@@ -20,6 +20,7 @@ public class WhatsOnCommand extends Command {
         this.date = date;
     }
 
+    /** Displays events and deadlines that occur on the requested date. */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) {
         ArrayList<EventTask> events = new ArrayList<>();
