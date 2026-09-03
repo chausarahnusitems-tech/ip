@@ -24,22 +24,22 @@ public abstract class Task {
             DateTimeFormatter.ofPattern("MMM d uuuu", Locale.ENGLISH);
 
     private final String item;
-    private boolean status;
+    private boolean isCompleted;
 
     /** Creates an incomplete task with the supplied description. */
     protected Task(String item) {
         this.item = item;
-        this.status = false;
+        this.isCompleted = false;
     }
 
     /** Updates whether the task has been completed. */
-    public void setStatus(boolean status) {
-        this.status = status;
+    public void setCompleted(boolean isCompleted) {
+        this.isCompleted = isCompleted;
     }
 
     /** Returns whether the task has been completed. */
     public boolean isCompleted() {
-        return status;
+        return isCompleted;
     }
 
     /** Returns this task's description. */
@@ -49,12 +49,12 @@ public abstract class Task {
 
     /** Returns the completion marker used in the task display. */
     protected String getStatusMark() {
-        return status ? "[X]" : "[ ]";
+        return isCompleted ? "[X]" : "[ ]";
     }
 
     /** Returns the task's completion status in the save-file format. */
     protected String getSaveStatus() {
-        return status ? "1" : "0";
+        return isCompleted ? "1" : "0";
     }
 
     /** Returns the task in the format shown to the user. */

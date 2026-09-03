@@ -11,18 +11,18 @@ import java.io.IOException;
  * Shared behavior for commands that change a task's completion status.
  */
 public abstract class StatusCommand extends NumberedTaskCommand {
-    private final boolean completedStatus;
+    private final boolean isCompleted;
 
     /**
      * Creates a status-changing command for one user-entered task number.
      *
      * @param action the command keyword used in validation messages
      * @param taskNumberText the task number entered by the user
-     * @param completedStatus the completion state to apply
+     * @param isCompleted the completion state to apply
      */
-    protected StatusCommand(String action, String taskNumberText, boolean completedStatus) {
+    protected StatusCommand(String action, String taskNumberText, boolean isCompleted) {
         super(action, taskNumberText);
-        this.completedStatus = completedStatus;
+        this.isCompleted = isCompleted;
     }
 
     /** Updates the selected task's status, saves the change, and displays the task. */
@@ -31,13 +31,13 @@ public abstract class StatusCommand extends NumberedTaskCommand {
             throws ChausistantException, IOException {
         int taskIndex = getTaskIndex(tasks);
         Task task = tasks.get(taskIndex);
-        boolean previousStatus = task.isCompleted();
-        task.setStatus(completedStatus);
+        boolean wasCompleted = task.isCompleted();
+        task.setCompleted(isCompleted);
 
         try {
             storage.save(tasks);
         } catch (IOException error) {
-            task.setStatus(previousStatus);
+            task.setCompleted(wasCompleted);
             throw error;
         }
         ui.showTaskStatus(task.printTask());

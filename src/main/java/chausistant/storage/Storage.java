@@ -123,7 +123,7 @@ public class Storage {
             case "E" -> createSavedEvent(fields);
             default -> throw new StorageException("unknown task type '" + fields.get(0) + "'.");
         };
-        task.setStatus("1".equals(fields.get(1)));
+        task.setCompleted("1".equals(fields.get(1)));
         return task;
     }
 

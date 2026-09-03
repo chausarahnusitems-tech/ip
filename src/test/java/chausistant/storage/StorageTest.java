@@ -100,7 +100,7 @@ class StorageTest {
         Storage storage = new Storage(saveFile);
         TaskList tasks = new TaskList();
         TodoTask todo = new TodoTask("review | archive \\ draft");
-        todo.setStatus(true);
+        todo.setCompleted(true);
         tasks.add(todo);
         tasks.add(new DeadlineTask("return book", LocalDateTime.of(2026, 6, 6, 12, 0), true));
         tasks.add(new EventTask("project meeting", LocalDateTime.of(2026, 8, 6, 14, 0), true,
