@@ -1,10 +1,11 @@
 package chausistant.command;
 
+import java.util.List;
+
 import chausistant.storage.Storage;
 import chausistant.task.Task;
 import chausistant.task.TaskList;
 import chausistant.ui.Ui;
-import java.util.List;
 
 /** Command that displays tasks whose descriptions contain a search phrase. */
 public class FindCommand extends Command {

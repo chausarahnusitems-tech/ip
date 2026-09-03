@@ -1,15 +1,16 @@
 package chausistant.command;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 import chausistant.storage.Storage;
 import chausistant.task.DeadlineTask;
 import chausistant.task.EventTask;
 import chausistant.task.Task;
 import chausistant.task.TaskList;
 import chausistant.ui.Ui;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
 /** Command that shows events and deadlines relevant to one calendar date. */
 public class WhatsOnCommand extends Command {

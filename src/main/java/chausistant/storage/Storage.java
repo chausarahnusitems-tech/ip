@@ -1,10 +1,5 @@
 package chausistant.storage;
 
-import chausistant.task.DeadlineTask;
-import chausistant.task.EventTask;
-import chausistant.task.Task;
-import chausistant.task.TaskList;
-import chausistant.task.TodoTask;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -22,6 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+
+import chausistant.task.DeadlineTask;
+import chausistant.task.EventTask;
+import chausistant.task.Task;
+import chausistant.task.TaskList;
+import chausistant.task.TodoTask;
 
 /**
  * Handles loading tasks from and saving tasks to the application's data file.

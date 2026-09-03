@@ -1,11 +1,12 @@
 package chausistant.command;
 
+import java.io.IOException;
+
 import chausistant.exception.ChausistantException;
 import chausistant.storage.Storage;
 import chausistant.task.Task;
 import chausistant.task.TaskList;
 import chausistant.ui.Ui;
-import java.io.IOException;
 
 /**
  * Shared behavior for commands that change a task's completion status.

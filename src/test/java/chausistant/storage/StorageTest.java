@@ -4,19 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import chausistant.task.DeadlineTask;
-import chausistant.task.EventTask;
-import chausistant.task.Task;
-import chausistant.task.TaskList;
-import chausistant.task.TodoTask;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import chausistant.task.DeadlineTask;
+import chausistant.task.EventTask;
+import chausistant.task.Task;
+import chausistant.task.TaskList;
+import chausistant.task.TodoTask;
 
 /** Tests persistence behaviour for saved task lists. */
 class StorageTest {
@@ -86,7 +88,7 @@ class StorageTest {
     }
 
     @Test
-    void load_directoryInsteadOfFile_throwsIOException() throws IOException {
+    void load_directoryInsteadOfFile_throwsIoException() throws IOException {
         Path saveDirectory = temporaryDirectory.resolve("duke.txt");
         Files.createDirectory(saveDirectory);
         Storage storage = new Storage(saveDirectory);
