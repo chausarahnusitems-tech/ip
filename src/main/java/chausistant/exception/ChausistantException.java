@@ -5,6 +5,7 @@ package chausistant.exception;
  */
 public class ChausistantException extends Exception {
 
+    /** Creates an error that can be shown directly to the user. */
     public ChausistantException(String message) {
         super(message);
     }

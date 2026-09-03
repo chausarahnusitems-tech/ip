@@ -28,6 +28,12 @@ Unless the user says otherwise, assume that you are assisting a student working 
 
 Ensure that Java 25 is used when running the application or build tasks. On macOS, use `sdk use java 25.0.3.fx-zulu` to switch to Java 25 if needed.
 
+## Course standards and conventions
+
+Follow the required CS2103/T standards for all Java and Git work in this project: [NUS CS2103/T Standards/Conventions](https://nus-cs2103-ay2627-s1.github.io/website/admin/standardsAndConventions.html).
+
+In particular, Java code must comply with the basic and intermediate rules of the [SE-EDU Java coding standard](https://se-education.org/guides/conventions/java/basic.html), and commit-message subjects must follow the [SE-EDU Git conventions](https://se-education.org/guides/conventions/git.html). Apply the optional advanced Java, Markdown, and documentation guidance when it improves clarity and does not conflict with existing project requirements.
+
 ## JUnit test coverage
 
 Maintain JUnit coverage for roughly the top 50% of the project's highest-value methods, prioritizing complex, core, or critical business logic over simple accessors and boilerplate.

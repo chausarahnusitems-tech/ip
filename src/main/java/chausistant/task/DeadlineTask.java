@@ -19,12 +19,14 @@ public class DeadlineTask extends Task {
         return deadline;
     }
 
+    /** Returns this deadline task in the chatbot's display format. */
     @Override
     public String printTask() {
         return "[D]" + getStatusMark() + " " + getItem()
                 + " (by: " + formatDateTimeForDisplay(deadline, hasDeadlineTime) + ")";
     }
 
+    /** Returns this deadline task as one save-file line. */
     @Override
     public String toSaveFormat() {
         return formatSaveLine("D", getSaveStatus(), getItem(),

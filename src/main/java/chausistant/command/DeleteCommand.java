@@ -15,6 +15,7 @@ public class DeleteCommand extends NumberedTaskCommand {
         super("delete", taskNumberText);
     }
 
+    /** Removes the selected task, saves the updated list, and shows a confirmation. */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage)
             throws ChausistantException, IOException {

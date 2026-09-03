@@ -8,11 +8,13 @@ public class TodoTask extends Task {
         super(item);
     }
 
+    /** Returns this todo task in the chatbot's display format. */
     @Override
     public String printTask() {
         return "[T]" + getStatusMark() + " " + getItem();
     }
 
+    /** Returns this todo task as one save-file line. */
     @Override
     public String toSaveFormat() {
         return formatSaveLine("T", getSaveStatus(), getItem());
