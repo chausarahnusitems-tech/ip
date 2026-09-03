@@ -728,3 +728,38 @@ Here are the tasks in your list:
 no tasks for now! go doomscroll
 Bye. Hope to see you again soon!
 ```
+
+## Test case: Find tasks by keyword
+
+Aim: Verify that finding is case-insensitive, retains matching task order, and handles no or missing keywords.
+
+Match: contains
+
+### Initial file: data/duke.txt
+
+```text
+T | 0 | read Book
+D | 0 | return book | 06/06/2020 1200
+E | 0 | project meeting | 06/08/2020 1400 | 06/08/2020 1600
+```
+
+### Inputs
+
+```text
+find BOOK
+find receipt
+find
+bye
+```
+
+### Expected output
+
+```text
+Here are the matching tasks in your list:
+1.[T][ ] read Book
+2.[D][ ] return book (by: Jun 6 2020 1200)
+Here are the matching tasks in your list:
+No matching tasks found.
+Oops! Use: find <keyword>.
+Bye. Hope to see you again soon!
+```

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import chausistant.command.AddCommand;
 import chausistant.command.DeleteCommand;
 import chausistant.command.ExitCommand;
+import chausistant.command.FindCommand;
 import chausistant.command.ListCommand;
 import chausistant.command.MarkCommand;
 import chausistant.command.UnmarkCommand;
@@ -56,6 +57,11 @@ class ParserTest {
     }
 
     @Test
+    void parseFindIgnoresCapitalization() throws ChausistantException {
+        assertInstanceOf(FindCommand.class, Parser.parse("FIND book"));
+    }
+
+    @Test
     void parseByeReturnsExitCommand() throws ChausistantException {
         ExitCommand command = assertInstanceOf(ExitCommand.class, Parser.parse("bye"));
         assertTrue(command.isExit());
@@ -72,6 +78,14 @@ class ParserTest {
                 ChausistantException.class, () -> Parser.parse("todo"));
 
         assertEquals("Use: todo <task>.", error.getMessage());
+    }
+
+    @Test
+    void parseFindWithoutKeywordThrowsUsageError() {
+        ChausistantException error = assertThrows(
+                ChausistantException.class, () -> Parser.parse("find"));
+
+        assertEquals("Use: find <keyword>.", error.getMessage());
     }
 
     @Test

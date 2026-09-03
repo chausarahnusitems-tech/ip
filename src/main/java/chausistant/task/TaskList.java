@@ -2,6 +2,7 @@ package chausistant.task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Owns the chatbot's mutable collection of tasks.
@@ -46,6 +47,15 @@ public class TaskList {
     /** Returns how many tasks are in the list. */
     public int size() {
         return tasks.size();
+    }
+
+    /** Returns tasks whose descriptions contain the search phrase, ignoring letter case. */
+    public List<Task> findMatchingTasks(String searchPhrase) {
+        String normalizedSearchPhrase = searchPhrase.toLowerCase(Locale.ROOT);
+        return tasks.stream()
+                .filter(task -> task.getItem().toLowerCase(Locale.ROOT)
+                        .contains(normalizedSearchPhrase))
+                .toList();
     }
 
     /** Returns a read-only snapshot of tasks in their current order. */

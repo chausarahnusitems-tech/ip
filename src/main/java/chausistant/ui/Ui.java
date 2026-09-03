@@ -86,6 +86,22 @@ public class Ui {
             System.out.println("no tasks for now! go doomscroll");
         }
 
+        showNumberedTasks(tasks);
+    }
+
+    /** Displays tasks whose descriptions match a user-provided search phrase. */
+    public void showMatchingTasks(List<String> tasks) {
+        System.out.println("Here are the matching tasks in your list:");
+        if (tasks.isEmpty()) {
+            System.out.println("No matching tasks found.");
+            return;
+        }
+
+        showNumberedTasks(tasks);
+    }
+
+    /** Displays each supplied task on its own one-based numbered line. */
+    private void showNumberedTasks(List<String> tasks) {
         for (int index = 0; index < tasks.size(); index++) {
             System.out.println((index + 1) + "." + tasks.get(index));
         }

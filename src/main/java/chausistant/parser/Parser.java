@@ -4,6 +4,7 @@ import chausistant.command.AddCommand;
 import chausistant.command.Command;
 import chausistant.command.DeleteCommand;
 import chausistant.command.ExitCommand;
+import chausistant.command.FindCommand;
 import chausistant.command.ListCommand;
 import chausistant.command.MarkCommand;
 import chausistant.command.UnmarkCommand;
@@ -53,6 +54,7 @@ public final class Parser {
     private static final String DATE_ERROR =
             "Use date format DD/MM/YYYY with a valid calendar date.";
     private static final String WHAT_IS_ON_ERROR = "Use: what's on: <date>.";
+    private static final String FIND_USAGE = "Use: find <keyword>.";
     private static final String TODO_USAGE = "Use: todo <task>.";
     private static final String DEADLINE_USAGE = "Use: deadline <task> /by <date> [HHmm].";
     private static final String EVENT_USAGE =
@@ -100,8 +102,17 @@ public final class Parser {
             case MARK -> new MarkCommand(details);
             case UNMARK -> new UnmarkCommand(details);
             case DELETE -> new DeleteCommand(details);
+            case FIND -> createFindCommand(details);
             case TODO, DEADLINE, EVENT -> new AddCommand(createTask(action, details));
         };
+    }
+
+    /** Creates a command that searches for one non-empty phrase in task descriptions. */
+    private static FindCommand createFindCommand(String details) throws ChausistantException {
+        if (details.isBlank()) {
+            throw new ChausistantException(FIND_USAGE);
+        }
+        return new FindCommand(details);
     }
 
     /** Creates a task after validating the details supplied for its task type. */
@@ -204,6 +215,7 @@ public final class Parser {
         MARK("mark"),
         UNMARK("unmark"),
         DELETE("delete"),
+        FIND("find"),
         TODO("todo"),
         DEADLINE("deadline"),
         EVENT("event");
