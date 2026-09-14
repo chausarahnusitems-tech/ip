@@ -28,6 +28,8 @@ public abstract class Task {
 
     /** Creates an incomplete task with the supplied description. */
     protected Task(String item) {
+        // The parser and storage loader reject missing descriptions before creating a task.
+        assert item != null && !item.isBlank() : "Every task must have a non-blank description.";
         this.item = item;
         this.isCompleted = false;
     }

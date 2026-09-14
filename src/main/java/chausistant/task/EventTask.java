@@ -13,6 +13,9 @@ public class EventTask extends Task {
     public EventTask(String item, LocalDateTime from, boolean hasFromTime,
                      LocalDateTime to, boolean hasToTime) {
         super(item);
+        // Parser and storage validate each timestamp and reject inverted event ranges.
+        assert from != null && to != null : "Event tasks must have a start and end time.";
+        assert !to.isBefore(from) : "An event must not end before it starts.";
         this.from = from;
         this.to = to;
         this.hasFromTime = hasFromTime;
