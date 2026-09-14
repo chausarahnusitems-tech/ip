@@ -28,6 +28,15 @@ import chausistant.task.TodoTask;
  * Handles loading tasks from and saving tasks to the application's data file.
  */
 public class Storage {
+    private static final int TYPE_FIELD_INDEX = 0;
+    private static final int STATUS_FIELD_INDEX = 1;
+    private static final int DESCRIPTION_FIELD_INDEX = 2;
+    private static final int TIME_FIELD_INDEX = 3;
+    private static final int EVENT_END_TIME_FIELD_INDEX = 4;
+    private static final int MINIMUM_TASK_FIELD_COUNT = 2;
+    private static final int TODO_FIELD_COUNT = 3;
+    private static final int DEADLINE_FIELD_COUNT = 4;
+    private static final int EVENT_FIELD_COUNT = 5;
     private static final LocalTime START_OF_DAY = LocalTime.MIDNIGHT;
     private static final LocalTime END_OF_DAY = LocalTime.of(23, 59);
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -111,38 +120,41 @@ public class Storage {
     /** Recreates a task from one valid line in the save-file format. */
     private static Task createTaskFromSaveFormat(String savedTask) throws StorageException {
         List<String> fields = splitSaveFields(savedTask);
-        if (fields.size() < 2) {
+        if (fields.size() < MINIMUM_TASK_FIELD_COUNT) {
             throw new StorageException("the task type or status is missing.");
         }
-        if (!fields.get(1).equals("0") && !fields.get(1).equals("1")) {
+        if (!fields.get(STATUS_FIELD_INDEX).equals("0") && !fields.get(STATUS_FIELD_INDEX).equals("1")) {
             throw new StorageException("the status must be 0 or 1.");
         }
 
-        Task task = switch (fields.get(0)) {
-            case "T" -> new TodoTask(getSavedField(fields, 3, 2, "todo description"));
+        Task task = switch (fields.get(TYPE_FIELD_INDEX)) {
+            case "T" -> new TodoTask(getSavedField(fields, TODO_FIELD_COUNT, DESCRIPTION_FIELD_INDEX,
+                    "todo description"));
             case "D" -> createSavedDeadline(fields);
             case "E" -> createSavedEvent(fields);
-            default -> throw new StorageException("unknown task type '" + fields.get(0) + "'.");
+            default -> throw new StorageException("unknown task type '" + fields.get(TYPE_FIELD_INDEX) + "'.");
         };
-        task.setCompleted("1".equals(fields.get(1)));
+        task.setCompleted("1".equals(fields.get(STATUS_FIELD_INDEX)));
         return task;
     }
 
     /** Recreates a deadline while preserving whether its saved time was optional. */
     private static DeadlineTask createSavedDeadline(List<String> fields) throws StorageException {
         StoredDateTime deadline = parseSavedDateTime(
-                getSavedField(fields, 4, 3, "deadline"), END_OF_DAY);
-        return new DeadlineTask(getSavedField(fields, 4, 2, "deadline description"),
+                getSavedField(fields, DEADLINE_FIELD_COUNT, TIME_FIELD_INDEX, "deadline"), END_OF_DAY);
+        return new DeadlineTask(getSavedField(fields, DEADLINE_FIELD_COUNT, DESCRIPTION_FIELD_INDEX,
+                "deadline description"),
                 deadline.dateTime, deadline.hasTime);
     }
 
     /** Recreates an event while preserving whether either saved time was optional. */
     private static EventTask createSavedEvent(List<String> fields) throws StorageException {
         StoredDateTime from = parseSavedDateTime(
-                getSavedField(fields, 5, 3, "event start time"), START_OF_DAY);
+                getSavedField(fields, EVENT_FIELD_COUNT, TIME_FIELD_INDEX, "event start time"), START_OF_DAY);
         StoredDateTime to = parseSavedDateTime(
-                getSavedField(fields, 5, 4, "event end time"), END_OF_DAY);
-        return new EventTask(getSavedField(fields, 5, 2, "event description"),
+                getSavedField(fields, EVENT_FIELD_COUNT, EVENT_END_TIME_FIELD_INDEX, "event end time"), END_OF_DAY);
+        return new EventTask(getSavedField(fields, EVENT_FIELD_COUNT, DESCRIPTION_FIELD_INDEX,
+                "event description"),
                 from.dateTime, from.hasTime, to.dateTime, to.hasTime);
     }
 
