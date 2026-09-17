@@ -5,7 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import chausistant.command.AddCommand;
 import chausistant.command.DeleteCommand;
@@ -17,9 +22,15 @@ import chausistant.command.ReminderCommand;
 import chausistant.command.UnmarkCommand;
 import chausistant.command.WhatsOnCommand;
 import chausistant.exception.ChausistantException;
+import chausistant.storage.Storage;
+import chausistant.task.TaskList;
+import chausistant.ui.Ui;
 
 /** Tests command parsing and input validation at the parser's public boundary. */
 class ParserTest {
+
+    @TempDir
+    Path temporaryDirectory;
 
     @Test
     void parseValidTodoReturnsAddCommand() throws ChausistantException {
@@ -36,6 +47,35 @@ class ParserTest {
     void parseValidDateOnlyEventReturnsAddCommand() throws ChausistantException {
         assertInstanceOf(AddCommand.class,
                 Parser.parse("event club meeting /from 2/12/2019 /to 3/12/2019"));
+    }
+
+    @Test
+    void parseDateOnlyDeadline_preservesDateOnlyDisplayAndSaveFormat()
+            throws ChausistantException, IOException {
+        TaskList tasks = new TaskList();
+        StringBuilder response = new StringBuilder();
+
+        Parser.parse("deadline submit form /by 8/6/2026")
+                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("duke.txt")));
+
+        assertEquals("[D][ ] submit form (by: Jun 8 2026)", tasks.get(0).printTask());
+        assertEquals("D | 0 | submit form | 08/06/2026",
+                Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+    }
+
+    @Test
+    void parseEventWithMixedDateAndTime_preservesBothFormats()
+            throws ChausistantException, IOException {
+        TaskList tasks = new TaskList();
+        StringBuilder response = new StringBuilder();
+
+        Parser.parse("event camp /from 8/6/2026 /to 10/6/2026 1830")
+                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("duke.txt")));
+
+        assertEquals("[E][ ] camp (from: Jun 8 2026 to: Jun 10 2026 1830)",
+                tasks.get(0).printTask());
+        assertEquals("E | 0 | camp | 08/06/2026 | 10/06/2026 1830",
+                Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
     }
 
     @Test
@@ -153,6 +193,14 @@ class ParserTest {
     void parseWhatsOnWithoutDateThrowsUsageError() {
         ChausistantException error = assertThrows(
                 ChausistantException.class, () -> Parser.parse("what's on:"));
+
+        assertEquals("Use: what's on: <date>.", error.getMessage());
+    }
+
+    @Test
+    void parseWhatsOnWithoutColonThrowsUsageError() {
+        ChausistantException error = assertThrows(
+                ChausistantException.class, () -> Parser.parse("what's on 2/12/2019"));
 
         assertEquals("Use: what's on: <date>.", error.getMessage());
     }

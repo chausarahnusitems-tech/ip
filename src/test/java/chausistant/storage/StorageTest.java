@@ -69,6 +69,24 @@ class StorageTest {
     }
 
     @Test
+    void load_dateOnlyAndEscapedEntries_preservesOriginalTaskDetails() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Files.write(saveFile, List.of(
+                "D | 0 | submit form | 08/06/2026",
+                "E | 0 | camp \\| planning \\\\ notes | 08/06/2026 | 10/06/2026 1830"),
+                StandardCharsets.UTF_8);
+        Storage storage = new Storage(saveFile);
+
+        Storage.LoadResult result = storage.load();
+
+        assertEquals(List.of(
+                "[D][ ] submit form (by: Jun 8 2026)",
+                "[E][ ] camp | planning \\ notes (from: Jun 8 2026 to: Jun 10 2026 1830)"),
+                renderTasks(result.getTasks()));
+        assertTrue(result.getWarnings().isEmpty());
+    }
+
+    @Test
     void load_malformedEntries_keepsValidTasksAndReportsWarnings() throws IOException {
         Path saveFile = temporaryDirectory.resolve("duke.txt");
         Files.write(saveFile, List.of(
@@ -100,6 +118,28 @@ class StorageTest {
         assertEquals(0, result.getTasks().size());
         assertEquals(1, result.getWarnings().size());
         assertTrue(result.getWarnings().get(0).contains("event end must not be before its start"));
+    }
+
+    @Test
+    void load_otherMalformedEntries_reportsSpecificWarnings() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Files.write(saveFile, List.of(
+                "T",
+                "T | 0 | ",
+                "D | 0 | report | invalid-date",
+                "T | 0 | too | many",
+                "T | invalid | invalid status"), StandardCharsets.UTF_8);
+        Storage storage = new Storage(saveFile);
+
+        Storage.LoadResult result = storage.load();
+
+        assertEquals(0, result.getTasks().size());
+        assertEquals(5, result.getWarnings().size());
+        assertTrue(result.getWarnings().get(0).contains("task type or status is missing"));
+        assertTrue(result.getWarnings().get(1).contains("todo description is missing"));
+        assertTrue(result.getWarnings().get(2).contains("saved date/time is invalid"));
+        assertTrue(result.getWarnings().get(3).contains("incorrect number of fields"));
+        assertTrue(result.getWarnings().get(4).contains("status must be 0 or 1"));
     }
 
     @Test
@@ -144,6 +184,16 @@ class StorageTest {
 
         assertEquals(List.of("T | 0 | new task"),
                 Files.readAllLines(saveFile, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void save_emptyTaskList_writesAnEmptySaveFile() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+
+        new Storage(saveFile).save(new TaskList());
+
+        assertTrue(Files.exists(saveFile));
+        assertEquals(List.of(), Files.readAllLines(saveFile, StandardCharsets.UTF_8));
     }
 
     /** Returns tasks in the same user-facing format used by the chatbot. */

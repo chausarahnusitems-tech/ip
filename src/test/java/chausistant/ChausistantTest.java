@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -89,5 +90,59 @@ class ChausistantTest {
 
         assertEquals("peek-a-boo! here are your upcoming deadlines:\n[D][ ] submit report (by: "
                 + deadline.format(DISPLAY_DATE_TIME_FORMATTER) + ")", response);
+    }
+
+    @Test
+    void getResponse_blankCommand_returnsEmptyResponse() {
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+
+        assertEquals("", chausistant.getResponse("   "));
+    }
+
+    @Test
+    void getResponse_savedTask_isAvailableToNewChatbotInstance() {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Chausistant firstChausistant = new Chausistant(saveFile);
+
+        firstChausistant.getResponse("todo read book");
+        String response = new Chausistant(saveFile).getResponse("list");
+
+        assertEquals("here's your tiny adventure list:" + System.lineSeparator()
+                + "1.[T][ ] read book", response);
+    }
+
+    @Test
+    void getChatResponse_loadWarning_marksResponseAsErrorWhileKeepingValidTasks() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Files.write(saveFile, List.of("T | 0 | read book", "T | bad | skip this task"),
+                StandardCharsets.UTF_8);
+
+        ChatResponse response = new Chausistant(saveFile).getChatResponse("list");
+
+        assertTrue(response.isError());
+        assertTrue(response.text().contains("Ignoring malformed task on line 2"));
+        assertTrue(response.text().endsWith("1.[T][ ] read book"));
+    }
+
+    @Test
+    void getChatResponse_saveFailure_returnsErrorResponse() throws IOException {
+        Path saveDirectory = temporaryDirectory.resolve("duke.txt");
+        Files.createDirectory(saveDirectory);
+
+        ChatResponse response = new Chausistant(saveDirectory).getChatResponse("todo read book");
+
+        assertTrue(response.isError());
+        assertTrue(response.text().contains("I could not load your tasks"));
+        assertTrue(response.text().contains("I could not save your tasks"));
+    }
+
+    @Test
+    void getTaskSummaries_loadsPersistedTasksBeforeReturningDashboardData() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Files.writeString(saveFile, "T | 1 | read book", StandardCharsets.UTF_8);
+
+        List<TaskSummary> taskSummaries = new Chausistant(saveFile).getTaskSummaries();
+
+        assertEquals(List.of(new TaskSummary("[T][X] read book", true)), taskSummaries);
     }
 }
