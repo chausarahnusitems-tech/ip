@@ -10,6 +10,8 @@ public class DeadlineTask extends Task {
     /** Creates a deadline task with its parsed due date and time. */
     public DeadlineTask(String item, LocalDateTime deadline, boolean hasDeadlineTime) {
         super(item);
+        // Parser and storage convert valid date text into a non-null deadline before constructing this task.
+        assert deadline != null : "Deadline tasks must have a deadline.";
         this.deadline = deadline;
         this.hasDeadlineTime = hasDeadlineTime;
     }

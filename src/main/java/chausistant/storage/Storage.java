@@ -152,7 +152,11 @@ public class Storage {
         StoredDateTime from = parseSavedDateTime(
                 getSavedField(fields, EVENT_FIELD_COUNT, TIME_FIELD_INDEX, "event start time"), START_OF_DAY);
         StoredDateTime to = parseSavedDateTime(
-                getSavedField(fields, EVENT_FIELD_COUNT, EVENT_END_TIME_FIELD_INDEX, "event end time"), END_OF_DAY);
+                getSavedField(fields, EVENT_FIELD_COUNT, EVENT_END_TIME_FIELD_INDEX,
+                        "event end time"), END_OF_DAY);
+        if (to.dateTime.isBefore(from.dateTime)) {
+            throw new StorageException("the event end must not be before its start.");
+        }
         return new EventTask(getSavedField(fields, EVENT_FIELD_COUNT, DESCRIPTION_FIELD_INDEX,
                 "event description"),
                 from.dateTime, from.hasTime, to.dateTime, to.hasTime);

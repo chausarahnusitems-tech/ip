@@ -60,6 +60,7 @@ public final class Parser {
     private static final String DEADLINE_USAGE = "Use: deadline <task> /by <date> [HHmm].";
     private static final String EVENT_USAGE =
             "Use: event <task> /from <date> [HHmm] /to <date> [HHmm].";
+    private static final String EVENT_RANGE_ERROR = "The event end must not be before its start.";
 
     private Parser() {
         // Utility class.
@@ -148,6 +149,9 @@ public final class Parser {
         }
         DateTimeDetails from = parseInputDateTime(matcher.group(2).strip(), START_OF_DAY);
         DateTimeDetails to = parseInputDateTime(matcher.group(3).strip(), END_OF_DAY);
+        if (to.dateTime.isBefore(from.dateTime)) {
+            throw new ChausistantException(EVENT_RANGE_ERROR);
+        }
         return new EventTask(matcher.group(1).strip(), from.dateTime, from.hasTime,
                 to.dateTime, to.hasTime);
     }

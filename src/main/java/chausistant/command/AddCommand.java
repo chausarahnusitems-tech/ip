@@ -13,17 +13,23 @@ public class AddCommand extends Command {
 
     /** Creates a command that adds the supplied task. */
     public AddCommand(Task task) {
+        // The parser always constructs add commands with a successfully created task.
+        assert task != null : "Add commands must contain a task.";
         this.task = task;
     }
 
     /** Adds the task, saves the updated list, and shows a confirmation. */
     @Override
     public void execute(TaskList tasks, Ui ui, Storage storage) throws IOException {
+        int taskCountBefore = tasks.size();
         tasks.add(task);
+        assert tasks.size() == taskCountBefore + 1 : "Adding one task must increase the list size by one.";
         try {
             storage.save(tasks);
         } catch (IOException error) {
-            tasks.remove(tasks.size() - 1);
+            Task restoredTask = tasks.remove(tasks.size() - 1);
+            assert restoredTask == task : "Saving failure must remove the task that this command added.";
+            assert tasks.size() == taskCountBefore : "Saving failure must restore the original task-list size.";
             throw error;
         }
         ui.showTaskAdded(task.printTask(), tasks.size());

@@ -88,6 +88,21 @@ class StorageTest {
     }
 
     @Test
+    void load_eventEndingBeforeItStarts_skipsEntryAndReportsWarning() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Files.writeString(saveFile,
+                "E | 0 | invalid meeting | 06/08/2026 1600 | 06/08/2026 1400\n",
+                StandardCharsets.UTF_8);
+        Storage storage = new Storage(saveFile);
+
+        Storage.LoadResult result = storage.load();
+
+        assertEquals(0, result.getTasks().size());
+        assertEquals(1, result.getWarnings().size());
+        assertTrue(result.getWarnings().get(0).contains("event end must not be before its start"));
+    }
+
+    @Test
     void load_directoryInsteadOfFile_throwsIoException() throws IOException {
         Path saveDirectory = temporaryDirectory.resolve("duke.txt");
         Files.createDirectory(saveDirectory);
