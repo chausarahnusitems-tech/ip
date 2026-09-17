@@ -1,6 +1,6 @@
-# Chausistant project template
+# chausistant project template
 
-This is a project template for a greenfield Java project for the Chausistant chatbot. Given below are instructions on how to use it.
+This is a project template for a greenfield Java project for the `chausistant` chatbot. Given below are instructions on how to use it.
 
 ## Setting up in Intellij
 

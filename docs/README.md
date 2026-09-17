@@ -1,8 +1,9 @@
-# Chausistant User Guide
+# chausistant User Guide
 
 // Product screenshot goes here
 
-// Product intro goes here
+`chausistant` is a cute, playful task companion that cheers you on as you work through your list.
+When you add a task, it will remind you: "don't give up! you have xxx tasks ahead of you..."
 
 ## Adding deadlines
 

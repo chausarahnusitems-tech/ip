@@ -44,7 +44,7 @@ public class Ui {
     /** Displays the chatbot's startup banner. */
     public void showWelcome() {
         String banner = String.join(System.lineSeparator(),
-                " Hello! I'm",
+                " hi! i'm",
                 "",
                 " ████ █   █  ███  █   █  ████ █████"
                         + "  ████ █████  ███  █   █ █████",
@@ -63,40 +63,42 @@ public class Ui {
                 "",
                 "                      chausistant",
                 "",
-                "What can I do for you today!")
+                "ready for a tiny win today?")
                 + System.lineSeparator();
         show(banner);
     }
 
     /** Displays an error message with the chatbot's standard error prefix. */
     public void showError(String message) {
-        show("Oops! " + message);
+        show("oopsie! " + message);
     }
 
     /** Displays the task created by a successful add command. */
     public void showTaskAdded(String task, int taskCount) {
-        show("Got it. I've added this task:");
+        show("yay! i've added this little mission:");
         show(task);
-        show("Now you have " + taskCount + " tasks in the list.");
+        show(formatTaskCount(taskCount));
     }
 
     /** Displays the task affected by a successful mark or unmark command. */
     public void showTaskStatus(String task) {
+        show("looking good! here's your task now:");
         show(task);
     }
 
     /** Displays the task removed by a successful delete command. */
     public void showTaskDeleted(String task, int taskCount) {
-        show("Noted. I've removed this task:");
+        show("poof! i've tucked this task away:");
         show(task);
-        show("Now you have " + taskCount + " tasks in the list.");
+        show("your list now has " + taskCount + " "
+                + (taskCount == 1 ? "task" : "tasks") + ".");
     }
 
     /** Displays every task currently in the task list. */
     public void showTaskList(List<String> tasks) {
-        show("Here are the tasks in your list:");
+        show("here's your tiny adventure list:");
         if (tasks.isEmpty()) {
-            show("no tasks for now! go doomscroll");
+            show("your list is all clear! tiny victory dance time!");
         }
 
         showNumberedTasks(tasks);
@@ -104,9 +106,9 @@ public class Ui {
 
     /** Displays tasks whose descriptions match a user-provided search phrase. */
     public void showMatchingTasks(List<String> tasks) {
-        show("Here are the matching tasks in your list:");
+        show("i found these task twins:");
         if (tasks.isEmpty()) {
-            show("No matching tasks found.");
+            show("no task twins found yet!");
             return;
         }
 
@@ -122,18 +124,18 @@ public class Ui {
 
     /** Displays scheduled events and deadlines for one requested date. */
     public void showSchedule(String date, List<String> events, List<String> deadlines) {
-        show("Here are the events and deadlines on " + date + ":");
-        show("Events:");
+        show("here's your day at a glance for " + date + ":");
+        show("events:");
         if (events.isEmpty()) {
-            show("No events on this date.");
+            show("no events here -- your calendar gets a cozy breather!");
         } else {
             events.forEach(this::show);
         }
 
         show("--------------------");
-        show("Deadlines:");
+        show("deadlines:");
         if (deadlines.isEmpty()) {
-            show("No deadlines on this date.");
+            show("no deadlines here -- you're all clear!");
         } else {
             deadlines.forEach(this::show);
         }
@@ -141,9 +143,9 @@ public class Ui {
 
     /** Displays incomplete deadlines due within the fixed reminder window. */
     public void showUpcomingDeadlines(List<String> deadlines) {
-        show("Here are your upcoming deadlines:");
+        show("peek-a-boo! here are your upcoming deadlines:");
         if (deadlines.isEmpty()) {
-            show("No upcoming deadlines in the next 7 days.");
+            show("no upcoming deadlines in the next 7 days -- you're all caught up!");
             return;
         }
 
@@ -152,7 +154,13 @@ public class Ui {
 
     /** Displays the chatbot's farewell message. */
     public void showGoodbye() {
-        show("Bye. Hope to see you again soon!");
+        show("bye-bye for now! chausistant will be cheering for you!");
+    }
+
+    /** Formats an encouraging task-count message with grammatically correct wording. */
+    private String formatTaskCount(int taskCount) {
+        String taskNoun = taskCount == 1 ? "task" : "tasks";
+        return "don't give up! you have " + taskCount + " " + taskNoun + " ahead of you...";
     }
 
     /** Sends one formatted message to this UI's output destination. */

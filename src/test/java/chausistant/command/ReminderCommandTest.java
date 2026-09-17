@@ -35,7 +35,7 @@ class ReminderCommandTest {
         new ReminderCommand(clock).execute(tasks, new Ui(response), new Storage(Path.of("unused.txt")));
 
         assertEquals(String.join(System.lineSeparator(),
-                "Here are your upcoming deadlines:",
+                "peek-a-boo! here are your upcoming deadlines:",
                 "[D][ ] submit form (by: Jun 2 2026)",
                 "[D][ ] later (by: Jun 3 2026 1000)") + System.lineSeparator(), response.toString());
     }
@@ -52,8 +52,9 @@ class ReminderCommandTest {
         new ReminderCommand(clock).execute(tasks, new Ui(response), new Storage(Path.of("unused.txt")));
 
         assertEquals(String.join(System.lineSeparator(),
-                "Here are your upcoming deadlines:",
-                "No upcoming deadlines in the next 7 days.") + System.lineSeparator(),
+                "peek-a-boo! here are your upcoming deadlines:",
+                "no upcoming deadlines in the next 7 days -- you're all caught up!")
+                + System.lineSeparator(),
                 response.toString());
     }
 }
