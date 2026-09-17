@@ -1,6 +1,8 @@
 package chausistant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +44,37 @@ class ChausistantTest {
         String response = chausistant.getResponse("dance");
 
         assertEquals("oopsie! Unknown command: dance", response);
+    }
+
+    @Test
+    void getChatResponse_invalidCommand_marksResponseAsError() {
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+
+        ChatResponse response = chausistant.getChatResponse("dance");
+
+        assertTrue(response.isError());
+        assertEquals("oopsie! Unknown command: dance", response.text());
+    }
+
+    @Test
+    void getTaskSummaries_completedTask_containsCurrentTaskState() {
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        chausistant.getResponse("todo read book");
+        chausistant.getResponse("mark 1");
+
+        TaskSummary taskSummary = chausistant.getTaskSummaries().getFirst();
+
+        assertTrue(taskSummary.isCompleted());
+        assertEquals("[T][X] read book", taskSummary.text());
+    }
+
+    @Test
+    void getChatResponse_successfulCommand_isNotAnError() {
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+
+        ChatResponse response = chausistant.getChatResponse("list");
+
+        assertFalse(response.isError());
     }
 
     @Test

@@ -3,19 +3,22 @@
 <?import java.net.URL?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
 <fx:root type="javafx.scene.layout.HBox" alignment="TOP_RIGHT" maxHeight="1.7976931348623157E308"
-         maxWidth="1.7976931348623157E308" prefWidth="400.0" xmlns="http://javafx.com/javafx/17"
+         maxWidth="1.7976931348623157E308" xmlns="http://javafx.com/javafx/17"
          xmlns:fx="http://javafx.com/fxml/1">
     <children>
-        <Label fx:id="dialog" minHeight="-Infinity" wrapText="true" />
-        <ImageView fx:id="displayPicture" fitHeight="99.0" fitWidth="99.0" pickOnBounds="true"
-                   preserveRatio="true" />
+        <VBox fx:id="messageContent" spacing="3.0" styleClass="message-content">
+            <children>
+                <Label fx:id="senderLabel" styleClass="message-sender" />
+                <Label fx:id="dialog" minHeight="-Infinity" styleClass="message-text" wrapText="true" />
+            </children>
+        </VBox>
     </children>
     <padding>
-        <Insets bottom="15.0" left="5.0" right="5.0" top="15.0" />
+        <Insets bottom="0.0" left="0.0" right="0.0" top="0.0" />
     </padding>
     <stylesheets>
         <URL value="@../css/dialog-box.css" />

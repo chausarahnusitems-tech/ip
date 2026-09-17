@@ -1,19 +1,43 @@
-.label {
-    -fx-background-color: linear-gradient(to bottom right, #c7f2d3, #a8e6cf);
-    -fx-background-radius: 1em 1em 0 1em;
-    -fx-border-color: #5fa878;
-    -fx-border-radius: 1em 1em 0 1em;
-    -fx-border-width: 1px;
-    -fx-padding: 8px 10px;
+.message-content {
+    -fx-spacing: 3;
 }
 
-.reply-label {
-    -fx-background-color: linear-gradient(to bottom right, #fff1c7, #f8d98b);
-    -fx-background-radius: 1em 1em 1em 0;
-    -fx-border-color: #c69235;
-    -fx-border-radius: 1em 1em 1em 0;
+.message-sender {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #81699a;
 }
 
-#displayPicture {
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0.35, 2, 2);
+.message-text {
+    -fx-font-size: 14px;
+    -fx-line-spacing: 2px;
+    -fx-padding: 10 12;
+}
+
+.user-message .message-content {
+    -fx-alignment: top-right;
+}
+
+.user-message .message-text {
+    -fx-background-color: #e9ddfb;
+    -fx-background-radius: 14 14 4 14;
+    -fx-text-fill: #442b65;
+}
+
+.assistant-message .message-text {
+    -fx-background-color: #f3effa;
+    -fx-background-radius: 14 14 14 4;
+    -fx-border-color: #e6dcf1;
+    -fx-border-radius: 14 14 14 4;
+    -fx-text-fill: #3f3154;
+}
+
+.error-message .message-sender {
+    -fx-text-fill: #bd4f78;
+}
+
+.error-message .message-text {
+    -fx-background-color: #ffe8f0;
+    -fx-border-color: #f4bfd0;
+    -fx-text-fill: #8c234d;
 }

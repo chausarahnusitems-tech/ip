@@ -15,8 +15,10 @@ import javafx.stage.Stage;
  */
 public class Main extends Application {
     private static final String MAIN_WINDOW_FXML = "/view/MainWindow.fxml";
-    private static final double WINDOW_WIDTH = 400.0;
-    private static final double WINDOW_HEIGHT = 600.0;
+    private static final double WINDOW_WIDTH = 460.0;
+    private static final double WINDOW_HEIGHT = 680.0;
+    private static final double MINIMUM_WINDOW_WIDTH = 360.0;
+    private static final double MINIMUM_WINDOW_HEIGHT = 520.0;
 
     private final Chausistant chausistant = new Chausistant();
 
@@ -35,8 +37,8 @@ public class Main extends Application {
 
             stage.setTitle("chausistant");
             stage.setResizable(true);
-            stage.setMinWidth(WINDOW_WIDTH);
-            stage.setMinHeight(WINDOW_HEIGHT);
+            stage.setMinWidth(MINIMUM_WINDOW_WIDTH);
+            stage.setMinHeight(MINIMUM_WINDOW_HEIGHT);
             stage.setScene(new Scene(mainWindow));
             stage.show();
         } catch (IOException error) {
