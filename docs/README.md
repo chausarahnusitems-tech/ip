@@ -20,7 +20,7 @@ list.
 
 ## Quick Start
 
-1. Build the application JAR by following the [project setup instructions](../README.md#creating-and-running-the-executable-jar).
+1. Build the application JAR by following the [project setup instructions](https://github.com/chausarahnusitems-tech/ip#creating-and-running-the-executable-jar).
 1. Run the generated JAR with Java 25:
 
    ```sh
