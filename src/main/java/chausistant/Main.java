@@ -33,7 +33,7 @@ public class Main extends Application {
             MainWindow controller = fxmlLoader.getController();
             controller.setChausistant(chausistant);
 
-            stage.setTitle("Chausistant");
+            stage.setTitle("chausistant");
             stage.setResizable(true);
             stage.setMinWidth(WINDOW_WIDTH);
             stage.setMinHeight(WINDOW_HEIGHT);

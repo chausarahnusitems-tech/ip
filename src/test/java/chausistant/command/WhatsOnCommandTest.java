@@ -35,12 +35,12 @@ class WhatsOnCommandTest {
         new WhatsOnCommand(date).execute(tasks, new Ui(response), new Storage(Path.of("unused.txt")));
 
         assertEquals(String.join(System.lineSeparator(),
-                "Here are the events and deadlines on Dec 2 2019:",
-                "Events:",
+                "here's your day at a glance for Dec 2 2019:",
+                "events:",
                 "[E][ ] overnight event (from: Dec 1 2019 to: Dec 3 2019)",
                 "[E][ ] afternoon meeting (from: Dec 2 2019 1400 to: Dec 2 2019 1600)",
                 "--------------------",
-                "Deadlines:",
+                "deadlines:",
                 "[D][ ] submit report (by: Dec 2 2019 0900)",
                 "[D][ ] collect book (by: Dec 2 2019 1800)") + System.lineSeparator(),
                 response.toString());

@@ -30,9 +30,9 @@ class ChausistantTest {
         String addResponse = chausistant.getResponse("todo read book");
         String listResponse = chausistant.getResponse("list");
 
-        assertEquals("Got it. I've added this task:\n[T][ ] read book\n"
-                + "Now you have 1 tasks in the list.", addResponse);
-        assertEquals("Here are the tasks in your list:\n1.[T][ ] read book", listResponse);
+        assertEquals("yay! i've added this little mission:\n[T][ ] read book\n"
+                + "don't give up! you have 1 task ahead of you...", addResponse);
+        assertEquals("here's your tiny adventure list:\n1.[T][ ] read book", listResponse);
     }
 
     @Test
@@ -41,7 +41,7 @@ class ChausistantTest {
 
         String response = chausistant.getResponse("dance");
 
-        assertEquals("Oops! Unknown command: dance", response);
+        assertEquals("oopsie! Unknown command: dance", response);
     }
 
     @Test
@@ -54,7 +54,7 @@ class ChausistantTest {
 
         String response = chausistant.getResponse("remind");
 
-        assertEquals("Here are your upcoming deadlines:\n[D][ ] submit report (by: "
+        assertEquals("peek-a-boo! here are your upcoming deadlines:\n[D][ ] submit report (by: "
                 + deadline.format(DISPLAY_DATE_TIME_FORMATTER) + ")", response);
     }
 }
