@@ -46,4 +46,27 @@ class TaskListTest {
 
         assertEquals(List.of(), taskList.findMatchingTasks("receipt"));
     }
+
+    @Test
+    void getIncompleteDeadlinesDueBetween_filtersAndSortsDeadlinesInInclusiveWindow() {
+        LocalDateTime start = LocalDateTime.of(2026, 6, 1, 10, 0);
+        DeadlineTask laterDeadline = new DeadlineTask("later", start.plusDays(2), true);
+        DeadlineTask firstTiedDeadline = new DeadlineTask("first tied", start.plusDays(1), true);
+        DeadlineTask secondTiedDeadline = new DeadlineTask("second tied", start.plusDays(1), true);
+        DeadlineTask deadlineAtWindowStart = new DeadlineTask("start", start, true);
+        DeadlineTask deadlineAtWindowEnd = new DeadlineTask("end", start.plusDays(7), true);
+        DeadlineTask pastDeadline = new DeadlineTask("past", start.minusMinutes(1), true);
+        DeadlineTask outsideDeadline = new DeadlineTask("outside", start.plusDays(7).plusMinutes(1), true);
+        DeadlineTask completedDeadline = new DeadlineTask("completed", start.plusDays(1), true);
+        completedDeadline.setCompleted(true);
+
+        TaskList taskList = new TaskList(laterDeadline, firstTiedDeadline, secondTiedDeadline,
+                deadlineAtWindowStart, deadlineAtWindowEnd, pastDeadline, outsideDeadline,
+                completedDeadline, new TodoTask("todo"), new EventTask("event", start.plusDays(1), true,
+                        start.plusDays(1).plusHours(1), true));
+
+        assertEquals(List.of(deadlineAtWindowStart, firstTiedDeadline, secondTiedDeadline,
+                laterDeadline, deadlineAtWindowEnd),
+                taskList.getIncompleteDeadlinesDueBetween(start, start.plusDays(7)));
+    }
 }

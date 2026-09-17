@@ -18,6 +18,7 @@ import chausistant.command.ExitCommand;
 import chausistant.command.FindCommand;
 import chausistant.command.ListCommand;
 import chausistant.command.MarkCommand;
+import chausistant.command.ReminderCommand;
 import chausistant.command.UnmarkCommand;
 import chausistant.command.WhatsOnCommand;
 import chausistant.exception.ChausistantException;
@@ -100,6 +101,10 @@ public final class Parser {
             case LIST -> {
                 validateNoDetails(action, details);
                 yield new ListCommand();
+            }
+            case REMIND -> {
+                validateNoDetails(action, details);
+                yield new ReminderCommand();
             }
             case MARK -> new MarkCommand(details);
             case UNMARK -> new UnmarkCommand(details);
@@ -221,6 +226,7 @@ public final class Parser {
         UNMARK("unmark"),
         DELETE("delete"),
         FIND("find"),
+        REMIND("remind"),
         TODO("todo"),
         DEADLINE("deadline"),
         EVENT("event");

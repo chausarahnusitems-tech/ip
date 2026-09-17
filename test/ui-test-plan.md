@@ -763,3 +763,61 @@ No matching tasks found.
 Oops! Use: find <keyword>.
 Bye. Hope to see you again soon!
 ```
+
+## Test case: Show an empty deadline reminder
+
+Aim: Verify that `remind` reports clearly when no incomplete deadline is due in the next seven days.
+
+Match: contains
+
+### Inputs
+
+```text
+remind
+bye
+```
+
+### Expected output
+
+```text
+Here are your upcoming deadlines:
+No upcoming deadlines in the next 7 days.
+Bye. Hope to see you again soon!
+```
+
+## Manual verification: View upcoming deadlines
+
+Aim: Verify that `remind` shows only incomplete deadlines due from the current time through the
+next seven days, in due-time order.
+
+Match: contains
+
+Before running this test, replace `<tomorrow>`, `<within-seven-days>`, `<yesterday>`, and
+`<eight-days-away>` with valid dates relative to the local date when the test is run.
+`<within-seven-days>` must be later than `<tomorrow>`. Use a time later than the current time for
+the two upcoming deadlines.
+
+### Suggested console inputs
+
+```text
+deadline later deadline /by <within-seven-days> 1800
+deadline earlier deadline /by <tomorrow> 0900
+deadline overdue deadline /by <yesterday> 1200
+deadline outside deadline /by <eight-days-away> 1200
+event upcoming event /from <tomorrow> 1000 /to <tomorrow> 1100
+todo ordinary task
+mark 1
+remind
+bye
+```
+
+### Expected reminder section
+
+```text
+Here are your upcoming deadlines:
+[D][ ] earlier deadline (by: <tomorrow> 0900)
+Bye. Hope to see you again soon!
+```
+
+The reminder output must not include the completed first deadline, the overdue deadline, the
+deadline more than seven days away, the event, or the todo task.
