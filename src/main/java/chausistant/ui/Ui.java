@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 public class Ui {
     private final Scanner scanner;
     private final Consumer<String> output;
+    private boolean hasShownError;
 
     /** Creates a UI that reads commands from the standard input stream. */
     public Ui() {
@@ -70,7 +71,13 @@ public class Ui {
 
     /** Displays an error message with the chatbot's standard error prefix. */
     public void showError(String message) {
+        hasShownError = true;
         show("oopsie! " + message);
+    }
+
+    /** Returns whether this UI has displayed at least one error message. */
+    public boolean hasShownError() {
+        return hasShownError;
     }
 
     /** Displays the task created by a successful add command. */
