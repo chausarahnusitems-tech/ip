@@ -1,6 +1,8 @@
 package chausistant.task;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -55,6 +57,27 @@ public class TaskList {
         return tasks.stream()
                 .filter(task -> task.getItem().toLowerCase(Locale.ROOT)
                         .contains(normalizedSearchPhrase))
+                .toList();
+    }
+
+    /**
+     * Returns incomplete deadlines due from the supplied start through the supplied end, in due-time order.
+     *
+     * @param start the inclusive start of the reminder window
+     * @param end the inclusive end of the reminder window
+     * @return incomplete deadlines in the reminder window, sorted by their due time
+     */
+    public List<DeadlineTask> getIncompleteDeadlinesDueBetween(LocalDateTime start, LocalDateTime end) {
+        assert start != null && end != null : "Reminder-window bounds must not be null.";
+        assert !end.isBefore(start) : "A reminder window cannot end before it starts.";
+
+        return tasks.stream()
+                .filter(DeadlineTask.class::isInstance)
+                .map(DeadlineTask.class::cast)
+                .filter(deadline -> !deadline.isCompleted())
+                .filter(deadline -> !deadline.getDeadline().isBefore(start)
+                        && !deadline.getDeadline().isAfter(end))
+                .sorted(Comparator.comparing(DeadlineTask::getDeadline))
                 .toList();
     }
 

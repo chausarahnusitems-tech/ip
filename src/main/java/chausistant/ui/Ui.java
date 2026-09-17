@@ -139,6 +139,17 @@ public class Ui {
         }
     }
 
+    /** Displays incomplete deadlines due within the fixed reminder window. */
+    public void showUpcomingDeadlines(List<String> deadlines) {
+        show("Here are your upcoming deadlines:");
+        if (deadlines.isEmpty()) {
+            show("No upcoming deadlines in the next 7 days.");
+            return;
+        }
+
+        deadlines.forEach(this::show);
+    }
+
     /** Displays the chatbot's farewell message. */
     public void showGoodbye() {
         show("Bye. Hope to see you again soon!");

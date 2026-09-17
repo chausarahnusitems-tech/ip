@@ -13,6 +13,7 @@ import chausistant.command.ExitCommand;
 import chausistant.command.FindCommand;
 import chausistant.command.ListCommand;
 import chausistant.command.MarkCommand;
+import chausistant.command.ReminderCommand;
 import chausistant.command.UnmarkCommand;
 import chausistant.command.WhatsOnCommand;
 import chausistant.exception.ChausistantException;
@@ -63,6 +64,11 @@ class ParserTest {
     }
 
     @Test
+    void parseRemindReturnsReminderCommand() throws ChausistantException {
+        assertInstanceOf(ReminderCommand.class, Parser.parse("REMIND"));
+    }
+
+    @Test
     void parseByeReturnsExitCommand() throws ChausistantException {
         ExitCommand command = assertInstanceOf(ExitCommand.class, Parser.parse("bye"));
         assertTrue(command.isExit());
@@ -87,6 +93,14 @@ class ParserTest {
                 ChausistantException.class, () -> Parser.parse("find"));
 
         assertEquals("Use: find <keyword>.", error.getMessage());
+    }
+
+    @Test
+    void parseRemindWithDetailsThrowsUsageError() {
+        ChausistantException error = assertThrows(
+                ChausistantException.class, () -> Parser.parse("remind tomorrow"));
+
+        assertEquals("Use: remind.", error.getMessage());
     }
 
     @Test
