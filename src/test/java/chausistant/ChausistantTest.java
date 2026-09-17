@@ -28,7 +28,7 @@ class ChausistantTest {
 
     @Test
     void getResponse_todoThenList_returnsCommandResponses() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
 
         String addResponse = chausistant.getResponse("todo read book");
         String listResponse = chausistant.getResponse("list");
@@ -40,7 +40,7 @@ class ChausistantTest {
 
     @Test
     void getResponse_invalidCommand_returnsErrorMessage() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
 
         String response = chausistant.getResponse("dance");
 
@@ -49,7 +49,7 @@ class ChausistantTest {
 
     @Test
     void getChatResponse_invalidCommand_marksResponseAsError() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
 
         ChatResponse response = chausistant.getChatResponse("dance");
 
@@ -59,7 +59,7 @@ class ChausistantTest {
 
     @Test
     void getTaskSummaries_completedTask_containsCurrentTaskState() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
         chausistant.getResponse("todo read book");
         chausistant.getResponse("mark 1");
 
@@ -71,7 +71,7 @@ class ChausistantTest {
 
     @Test
     void getChatResponse_successfulCommand_isNotAnError() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
 
         ChatResponse response = chausistant.getChatResponse("list");
 
@@ -81,7 +81,7 @@ class ChausistantTest {
     @Test
     void getResponse_remindListsUpcomingDeadline() throws IOException {
         LocalDateTime deadline = LocalDateTime.now().plusDays(1).withSecond(0).withNano(0);
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile, "D | 0 | submit report | " + deadline.format(SAVE_DATE_TIME_FORMATTER),
                 StandardCharsets.UTF_8);
         Chausistant chausistant = new Chausistant(saveFile);
@@ -94,14 +94,14 @@ class ChausistantTest {
 
     @Test
     void getResponse_blankCommand_returnsEmptyResponse() {
-        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("duke.txt"));
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
 
         assertEquals("", chausistant.getResponse("   "));
     }
 
     @Test
     void getResponse_savedTask_isAvailableToNewChatbotInstance() {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Chausistant firstChausistant = new Chausistant(saveFile);
 
         firstChausistant.getResponse("todo read book");
@@ -113,7 +113,7 @@ class ChausistantTest {
 
     @Test
     void getChatResponse_loadWarning_marksResponseAsErrorWhileKeepingValidTasks() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.write(saveFile, List.of("T | 0 | read book", "T | bad | skip this task"),
                 StandardCharsets.UTF_8);
 
@@ -126,7 +126,7 @@ class ChausistantTest {
 
     @Test
     void getChatResponse_saveFailure_returnsErrorResponse() throws IOException {
-        Path saveDirectory = temporaryDirectory.resolve("duke.txt");
+        Path saveDirectory = temporaryDirectory.resolve("chausistant.txt");
         Files.createDirectory(saveDirectory);
 
         ChatResponse response = new Chausistant(saveDirectory).getChatResponse("todo read book");
@@ -138,7 +138,7 @@ class ChausistantTest {
 
     @Test
     void getTaskSummaries_loadsPersistedTasksBeforeReturningDashboardData() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile, "T | 1 | read book", StandardCharsets.UTF_8);
 
         List<TaskSummary> taskSummaries = new Chausistant(saveFile).getTaskSummaries();

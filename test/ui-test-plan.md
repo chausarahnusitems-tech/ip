@@ -330,7 +330,7 @@ Now you have 2 tasks in the list.
 Bye. Hope to see you again soon!
 ```
 
-### Expected file: data/duke.txt
+### Expected file: data/chausistant.txt
 
 ```text
 T | 1 | read book
@@ -343,7 +343,7 @@ Aim: Verify that valid todo, deadline, and event entries are restored from the s
 
 Match: contains
 
-### Initial file: data/duke.txt
+### Initial file: data/chausistant.txt
 
 ```text
 T | 1 | read book
@@ -446,7 +446,7 @@ No deadlines on this date.
 Bye. Hope to see you again soon!
 ```
 
-### Expected file: data/duke.txt
+### Expected file: data/chausistant.txt
 
 ```text
 D | 0 | submit form | 02/12/2019
@@ -460,7 +460,7 @@ Aim: Verify that date-only task details are restored without adding a time durin
 
 Match: contains
 
-### Initial file: data/duke.txt
+### Initial file: data/chausistant.txt
 
 ```text
 D | 0 | submit form | 02/12/2019
@@ -617,7 +617,7 @@ Aim: Verify that an empty save file is treated as an empty task list.
 
 Match: contains
 
-### Initial file: data/duke.txt
+### Initial file: data/chausistant.txt
 
 ```text
 
@@ -660,7 +660,7 @@ Now you have 1 tasks in the list.
 Bye. Hope to see you again soon!
 ```
 
-### Expected file: data/duke.txt
+### Expected file: data/chausistant.txt
 
 ```text
 T | 0 | prepare \| review \\ archive
@@ -672,7 +672,7 @@ Aim: Verify that blank and malformed save-file lines do not crash the program or
 
 Match: contains
 
-### Initial file: data/duke.txt
+### Initial file: data/chausistant.txt
 
 ```text
 T | 1 | keep this task
@@ -709,7 +709,7 @@ Aim: Verify that loading and saving report a clear error and retain an empty in-
 
 Match: contains
 
-### Initial directory: data/duke.txt
+### Initial directory: data/chausistant.txt
 
 ### Inputs
 
@@ -722,8 +722,8 @@ bye
 ### Expected output
 
 ```text
-Oops! I could not load your tasks from data/duke.txt.
-Oops! I could not save your tasks to data/duke.txt.
+Oops! I could not load your tasks from data/chausistant.txt.
+Oops! I could not save your tasks to data/chausistant.txt.
 Here are the tasks in your list:
 no tasks for now! go doomscroll
 Bye. Hope to see you again soon!
@@ -735,7 +735,7 @@ Aim: Verify that finding is case-insensitive, retains matching task order, and h
 
 Match: contains
 
-### Initial file: data/duke.txt
+### Initial file: data/chausistant.txt
 
 ```text
 T | 0 | read Book

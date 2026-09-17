@@ -40,17 +40,21 @@ the application and its runtime dependencies. Use JDK 25 to build and run it.
    ./gradlew shadowJar
    ```
 
-1. Locate the generated file at `build/libs/duke.jar`.
+1. Locate the generated file at `build/libs/chausistant.jar`.
 
-1. To test it as a user would, copy `duke.jar` into an empty folder, open a
+1. To test it as a user would, copy `chausistant.jar` into an empty folder, open a
    terminal in that folder, and run:
 
    ```bash
-   java -jar "duke.jar"
+   java -jar "chausistant.jar"
    ```
 
-   The application stores its task data in `data/duke.txt`, relative to the
+   The application stores its task data in `data/chausistant.txt`, relative to the
    folder where the JAR is run.
 
 The generated JAR is intentionally excluded by `.gitignore`; do not commit it.
-To distribute a version, attach `build/libs/duke.jar` to a GitHub Release instead.
+To distribute a version, attach `build/libs/chausistant.jar` to a GitHub Release instead.
+
+## Acknowledgments
+
+ChatGPT assisted with the graphical user-interface layout and styling.

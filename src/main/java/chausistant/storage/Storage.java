@@ -108,7 +108,7 @@ public class Storage {
         }
         Files.createDirectories(dataDirectory);
         List<String> savedTasks = tasks.getTasks().stream().map(Task::toSaveFormat).toList();
-        Path temporaryFile = Files.createTempFile(dataDirectory, "duke-", ".tmp");
+        Path temporaryFile = Files.createTempFile(dataDirectory, "chausistant-", ".tmp");
         try {
             Files.write(temporaryFile, savedTasks, StandardCharsets.UTF_8);
             replaceSaveFile(temporaryFile);

@@ -15,7 +15,7 @@ import chausistant.ui.Ui;
  * Coordinates the chatbot's user interface, storage, task list, and commands.
  */
 public class Chausistant {
-    private static final Path SAVE_FILE = Path.of("data", "duke.txt");
+    private static final Path SAVE_FILE = Path.of("data", "chausistant.txt");
 
     private final Path saveFile;
     private final Storage storage;

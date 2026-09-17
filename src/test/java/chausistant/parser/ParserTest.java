@@ -56,11 +56,11 @@ class ParserTest {
         StringBuilder response = new StringBuilder();
 
         Parser.parse("deadline submit form /by 8/6/2026")
-                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("duke.txt")));
+                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("chausistant.txt")));
 
         assertEquals("[D][ ] submit form (by: Jun 8 2026)", tasks.get(0).printTask());
         assertEquals("D | 0 | submit form | 08/06/2026",
-                Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+                Files.readString(temporaryDirectory.resolve("chausistant.txt")).strip());
     }
 
     @Test
@@ -70,12 +70,12 @@ class ParserTest {
         StringBuilder response = new StringBuilder();
 
         Parser.parse("event camp /from 8/6/2026 /to 10/6/2026 1830")
-                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("duke.txt")));
+                .execute(tasks, new Ui(response), new Storage(temporaryDirectory.resolve("chausistant.txt")));
 
         assertEquals("[E][ ] camp (from: Jun 8 2026 to: Jun 10 2026 1830)",
                 tasks.get(0).printTask());
         assertEquals("E | 0 | camp | 08/06/2026 | 10/06/2026 1830",
-                Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+                Files.readString(temporaryDirectory.resolve("chausistant.txt")).strip());
     }
 
     @Test

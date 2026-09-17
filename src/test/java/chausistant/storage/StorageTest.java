@@ -28,7 +28,7 @@ class StorageTest {
 
     @Test
     void load_missingFile_returnsEmptyResultWithoutWarnings() throws IOException {
-        Storage storage = new Storage(temporaryDirectory.resolve("data/duke.txt"));
+        Storage storage = new Storage(temporaryDirectory.resolve("data/chausistant.txt"));
 
         Storage.LoadResult result = storage.load();
 
@@ -38,7 +38,7 @@ class StorageTest {
 
     @Test
     void load_blankFile_returnsEmptyResultWithoutWarnings() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile, "\n  \n", StandardCharsets.UTF_8);
         Storage storage = new Storage(saveFile);
 
@@ -50,7 +50,7 @@ class StorageTest {
 
     @Test
     void load_validEntries_restoresTaskTypesStatusesAndOrder() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.write(saveFile, List.of(
                 "T | 1 | read book",
                 "D | 0 | return book | 06/06/2026 1200",
@@ -70,7 +70,7 @@ class StorageTest {
 
     @Test
     void load_dateOnlyAndEscapedEntries_preservesOriginalTaskDetails() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.write(saveFile, List.of(
                 "D | 0 | submit form | 08/06/2026",
                 "E | 0 | camp \\| planning \\\\ notes | 08/06/2026 | 10/06/2026 1830"),
@@ -88,7 +88,7 @@ class StorageTest {
 
     @Test
     void load_malformedEntries_keepsValidTasksAndReportsWarnings() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.write(saveFile, List.of(
                 "T | 0 | keep this task",
                 "D | 2 | invalid status | 06/06/2026 1200",
@@ -107,7 +107,7 @@ class StorageTest {
 
     @Test
     void load_eventEndingBeforeItStarts_skipsEntryAndReportsWarning() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile,
                 "E | 0 | invalid meeting | 06/08/2026 1600 | 06/08/2026 1400\n",
                 StandardCharsets.UTF_8);
@@ -122,7 +122,7 @@ class StorageTest {
 
     @Test
     void load_otherMalformedEntries_reportsSpecificWarnings() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.write(saveFile, List.of(
                 "T",
                 "T | 0 | ",
@@ -144,7 +144,7 @@ class StorageTest {
 
     @Test
     void load_directoryInsteadOfFile_throwsIoException() throws IOException {
-        Path saveDirectory = temporaryDirectory.resolve("duke.txt");
+        Path saveDirectory = temporaryDirectory.resolve("chausistant.txt");
         Files.createDirectory(saveDirectory);
         Storage storage = new Storage(saveDirectory);
 
@@ -153,7 +153,7 @@ class StorageTest {
 
     @Test
     void save_nestedPath_writesEscapedTaskEntries() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("data/duke.txt");
+        Path saveFile = temporaryDirectory.resolve("data/chausistant.txt");
         Storage storage = new Storage(saveFile);
         TaskList tasks = new TaskList();
         TodoTask todo = new TodoTask("review | archive \\ draft");
@@ -174,7 +174,7 @@ class StorageTest {
 
     @Test
     void save_existingFile_replacesOldContents() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile, "T | 0 | old task\n", StandardCharsets.UTF_8);
         Storage storage = new Storage(saveFile);
         TaskList replacementTasks = new TaskList();
@@ -188,7 +188,7 @@ class StorageTest {
 
     @Test
     void save_emptyTaskList_writesAnEmptySaveFile() throws IOException {
-        Path saveFile = temporaryDirectory.resolve("duke.txt");
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
 
         new Storage(saveFile).save(new TaskList());
 

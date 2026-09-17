@@ -31,12 +31,13 @@ class CommandTest {
     void addCommand_addsSavesAndDisplaysTask() throws IOException {
         TaskList tasks = new TaskList();
         StringBuilder response = new StringBuilder();
-        Storage storage = new Storage(temporaryDirectory.resolve("duke.txt"));
+        Storage storage = new Storage(temporaryDirectory.resolve("chausistant.txt"));
 
         new AddCommand(new TodoTask("read book")).execute(tasks, new Ui(response), storage);
 
         assertEquals("[T][ ] read book", tasks.get(0).printTask());
-        assertEquals("T | 0 | read book", Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+        assertEquals("T | 0 | read book",
+                Files.readString(temporaryDirectory.resolve("chausistant.txt")).strip());
         assertEquals(String.join(System.lineSeparator(),
                 "yay! i've added this little mission:",
                 "[T][ ] read book",
@@ -48,12 +49,13 @@ class CommandTest {
     void deleteCommand_removesSavesAndDisplaysSelectedTask() throws IOException, ChausistantException {
         TaskList tasks = new TaskList(new TodoTask("read book"), new TodoTask("return book"));
         StringBuilder response = new StringBuilder();
-        Storage storage = new Storage(temporaryDirectory.resolve("duke.txt"));
+        Storage storage = new Storage(temporaryDirectory.resolve("chausistant.txt"));
 
         new DeleteCommand("2").execute(tasks, new Ui(response), storage);
 
         assertEquals(List.of("[T][ ] read book"), tasks.getTasks().stream().map(task -> task.printTask()).toList());
-        assertEquals("T | 0 | read book", Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+        assertEquals("T | 0 | read book",
+                Files.readString(temporaryDirectory.resolve("chausistant.txt")).strip());
         assertEquals(String.join(System.lineSeparator(),
                 "poof! i've tucked this task away:",
                 "[T][ ] return book",
@@ -64,7 +66,7 @@ class CommandTest {
     void statusCommands_updateAndDisplayCompletionState() throws IOException, ChausistantException {
         TodoTask task = new TodoTask("read book");
         TaskList tasks = new TaskList(task);
-        Storage storage = new Storage(temporaryDirectory.resolve("duke.txt"));
+        Storage storage = new Storage(temporaryDirectory.resolve("chausistant.txt"));
         StringBuilder markedResponse = new StringBuilder();
         StringBuilder unmarkedResponse = new StringBuilder();
 
@@ -72,7 +74,8 @@ class CommandTest {
         new UnmarkCommand("1").execute(tasks, new Ui(unmarkedResponse), storage);
 
         assertFalse(task.isCompleted());
-        assertEquals("T | 0 | read book", Files.readString(temporaryDirectory.resolve("duke.txt")).strip());
+        assertEquals("T | 0 | read book",
+                Files.readString(temporaryDirectory.resolve("chausistant.txt")).strip());
         assertEquals("looking good! here's your task now:" + System.lineSeparator()
                 + "[T][X] read book" + System.lineSeparator(), markedResponse.toString());
         assertEquals("looking good! here's your task now:" + System.lineSeparator()
