@@ -32,6 +32,14 @@ public class EventTask extends Task {
         return to;
     }
 
+    /** Returns whether another event has the same start and end details. */
+    @Override
+    protected boolean hasSameSchedulingDetails(Task other) {
+        EventTask otherEvent = (EventTask) other;
+        return from.equals(otherEvent.from) && to.equals(otherEvent.to)
+                && hasFromTime == otherEvent.hasFromTime && hasToTime == otherEvent.hasToTime;
+    }
+
     /** Returns this event task in the chatbot's display format. */
     @Override
     public String printTask() {

@@ -8,6 +8,12 @@ public class TodoTask extends Task {
         super(item);
     }
 
+    /** Todos do not have scheduling details beyond the description checked by the base class. */
+    @Override
+    protected boolean hasSameSchedulingDetails(Task other) {
+        return true;
+    }
+
     /** Returns this todo task in the chatbot's display format. */
     @Override
     public String printTask() {

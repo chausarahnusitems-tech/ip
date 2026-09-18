@@ -36,6 +36,16 @@ public class TaskList {
         tasks.add(index, task);
     }
 
+    /**
+     * Returns whether this list already contains a task with the same user-visible details.
+     *
+     * @param task the task to check
+     * @return whether an equivalent task is already in the list
+     */
+    public boolean hasTaskWithSameDetails(Task task) {
+        return tasks.stream().anyMatch(task::hasSameDetailsAs);
+    }
+
     /** Returns the task at the specified zero-based index. */
     public Task get(int index) {
         return tasks.get(index);

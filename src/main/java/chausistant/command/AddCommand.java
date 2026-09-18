@@ -2,6 +2,7 @@ package chausistant.command;
 
 import java.io.IOException;
 
+import chausistant.exception.ChausistantException;
 import chausistant.storage.Storage;
 import chausistant.task.Task;
 import chausistant.task.TaskList;
@@ -20,7 +21,11 @@ public class AddCommand extends Command {
 
     /** Adds the task, saves the updated list, and shows a confirmation. */
     @Override
-    public void execute(TaskList tasks, Ui ui, Storage storage) throws IOException {
+    public void execute(TaskList tasks, Ui ui, Storage storage) throws ChausistantException, IOException {
+        if (tasks.hasTaskWithSameDetails(task)) {
+            throw new ChausistantException("This task is already in your list.");
+        }
+
         int taskCountBefore = tasks.size();
         tasks.add(task);
         assert tasks.size() == taskCountBefore + 1 : "Adding one task must increase the list size by one.";

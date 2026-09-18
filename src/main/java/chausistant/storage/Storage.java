@@ -154,8 +154,8 @@ public class Storage {
         StoredDateTime to = parseSavedDateTime(
                 getSavedField(fields, EVENT_FIELD_COUNT, EVENT_END_TIME_FIELD_INDEX,
                         "event end time"), END_OF_DAY);
-        if (to.dateTime.isBefore(from.dateTime)) {
-            throw new StorageException("the event end must not be before its start.");
+        if (!to.dateTime.isAfter(from.dateTime)) {
+            throw new StorageException("the event end must be after its start.");
         }
         return new EventTask(getSavedField(fields, EVENT_FIELD_COUNT, DESCRIPTION_FIELD_INDEX,
                 "event description"),
@@ -193,18 +193,22 @@ public class Storage {
     }
 
     /** Splits a save-file line while preserving escaped pipe and backslash characters. */
-    private static List<String> splitSaveFields(String savedTask) {
+    private static List<String> splitSaveFields(String savedTask) throws StorageException {
         ArrayList<String> fields = new ArrayList<>();
         StringBuilder currentField = new StringBuilder();
         for (int index = 0; index < savedTask.length(); index++) {
             char character = savedTask.charAt(index);
-            if (character == '\\' && index + 1 < savedTask.length()) {
+            if (character == '\\') {
+                if (index + 1 >= savedTask.length()) {
+                    throw new StorageException("the task contains an incomplete escape sequence.");
+                }
                 char nextCharacter = savedTask.charAt(index + 1);
                 if (nextCharacter == '\\' || nextCharacter == '|') {
                     currentField.append(nextCharacter);
                     index++;
                     continue;
                 }
+                throw new StorageException("the task contains an invalid escape sequence.");
             }
 
             if (character == '|') {
