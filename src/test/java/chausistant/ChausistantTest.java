@@ -58,6 +58,16 @@ class ChausistantTest {
     }
 
     @Test
+    void getChatResponse_missingCommand_returnsError() {
+        Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
+
+        ChatResponse response = chausistant.getChatResponse(null);
+
+        assertTrue(response.isError());
+        assertEquals("oopsie! Please enter a command.", response.text());
+    }
+
+    @Test
     void getTaskSummaries_completedTask_containsCurrentTaskState() {
         Chausistant chausistant = new Chausistant(temporaryDirectory.resolve("chausistant.txt"));
         chausistant.getResponse("todo read book");

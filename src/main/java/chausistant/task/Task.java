@@ -44,10 +44,29 @@ public abstract class Task {
         return isCompleted;
     }
 
+    /**
+     * Returns whether another task represents the same task details, independent of completion status.
+     *
+     * @param other the task to compare against
+     * @return whether both tasks have the same type, description, and scheduling details
+     */
+    public final boolean hasSameDetailsAs(Task other) {
+        return other != null && getClass().equals(other.getClass())
+                && item.equals(other.item) && hasSameSchedulingDetails(other);
+    }
+
     /** Returns this task's description. */
     protected String getItem() {
         return item;
     }
+
+    /**
+     * Returns whether another task of the same concrete type has matching scheduling details.
+     *
+     * @param other another task with the same concrete type
+     * @return whether the scheduling details match
+     */
+    protected abstract boolean hasSameSchedulingDetails(Task other);
 
     /** Returns the completion marker used in the task display. */
     protected String getStatusMark() {

@@ -33,6 +33,10 @@ public abstract class StatusCommand extends NumberedTaskCommand {
         int taskIndex = getTaskIndex(tasks);
         Task task = tasks.get(taskIndex);
         boolean wasCompleted = task.isCompleted();
+        if (wasCompleted == isCompleted) {
+            String state = isCompleted ? "completed" : "incomplete";
+            throw new ChausistantException("This task is already marked as " + state + ".");
+        }
         task.setCompleted(isCompleted);
 
         try {

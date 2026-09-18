@@ -73,6 +73,10 @@ public class Chausistant {
         StringBuilder response = new StringBuilder();
         Ui responseUi = new Ui(response);
         loadTasks(responseUi);
+        if (fullCommand == null) {
+            responseUi.showError("Please enter a command.");
+            return new ChatResponse(response.toString().strip(), ChatResponse.Type.ERROR);
+        }
         processCommand(fullCommand.strip(), responseUi);
         ChatResponse.Type responseType = responseUi.hasShownError()
                 ? ChatResponse.Type.ERROR : ChatResponse.Type.STANDARD;

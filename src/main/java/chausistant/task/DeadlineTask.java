@@ -21,6 +21,14 @@ public class DeadlineTask extends Task {
         return deadline;
     }
 
+    /** Returns whether another deadline has the same date and time details. */
+    @Override
+    protected boolean hasSameSchedulingDetails(Task other) {
+        DeadlineTask otherDeadline = (DeadlineTask) other;
+        return deadline.equals(otherDeadline.deadline)
+                && hasDeadlineTime == otherDeadline.hasDeadlineTime;
+    }
+
     /** Returns this deadline task in the chatbot's display format. */
     @Override
     public String printTask() {

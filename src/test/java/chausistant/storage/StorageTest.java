@@ -106,7 +106,7 @@ class StorageTest {
     }
 
     @Test
-    void load_eventEndingBeforeItStarts_skipsEntryAndReportsWarning() throws IOException {
+    void load_eventEndingAtOrBeforeItsStart_skipsEntryAndReportsWarning() throws IOException {
         Path saveFile = temporaryDirectory.resolve("chausistant.txt");
         Files.writeString(saveFile,
                 "E | 0 | invalid meeting | 06/08/2026 1600 | 06/08/2026 1400\n",
@@ -117,7 +117,22 @@ class StorageTest {
 
         assertEquals(0, result.getTasks().size());
         assertEquals(1, result.getWarnings().size());
-        assertTrue(result.getWarnings().get(0).contains("event end must not be before its start"));
+        assertTrue(result.getWarnings().get(0).contains("event end must be after its start"));
+    }
+
+    @Test
+    void load_eventEndingAtItsStart_skipsEntryAndReportsWarning() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
+        Files.writeString(saveFile,
+                "E | 0 | invalid meeting | 06/08/2026 1400 | 06/08/2026 1400\n",
+                StandardCharsets.UTF_8);
+        Storage storage = new Storage(saveFile);
+
+        Storage.LoadResult result = storage.load();
+
+        assertEquals(0, result.getTasks().size());
+        assertEquals(1, result.getWarnings().size());
+        assertTrue(result.getWarnings().get(0).contains("event end must be after its start"));
     }
 
     @Test
@@ -140,6 +155,19 @@ class StorageTest {
         assertTrue(result.getWarnings().get(2).contains("saved date/time is invalid"));
         assertTrue(result.getWarnings().get(3).contains("incorrect number of fields"));
         assertTrue(result.getWarnings().get(4).contains("status must be 0 or 1"));
+    }
+
+    @Test
+    void load_invalidEscapeSequence_skipsEntryAndReportsWarning() throws IOException {
+        Path saveFile = temporaryDirectory.resolve("chausistant.txt");
+        Files.writeString(saveFile, "T | 0 | invalid \\q escape", StandardCharsets.UTF_8);
+        Storage storage = new Storage(saveFile);
+
+        Storage.LoadResult result = storage.load();
+
+        assertEquals(0, result.getTasks().size());
+        assertEquals(1, result.getWarnings().size());
+        assertTrue(result.getWarnings().getFirst().contains("invalid escape sequence"));
     }
 
     @Test

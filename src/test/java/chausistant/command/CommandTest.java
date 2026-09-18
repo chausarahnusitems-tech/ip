@@ -28,7 +28,7 @@ class CommandTest {
     Path temporaryDirectory;
 
     @Test
-    void addCommand_addsSavesAndDisplaysTask() throws IOException {
+    void addCommand_addsSavesAndDisplaysTask() throws IOException, ChausistantException {
         TaskList tasks = new TaskList();
         StringBuilder response = new StringBuilder();
         Storage storage = new Storage(temporaryDirectory.resolve("chausistant.txt"));
@@ -43,6 +43,18 @@ class CommandTest {
                 "[T][ ] read book",
                 "don't give up! you have 1 task ahead of you...") + System.lineSeparator(),
                 response.toString());
+    }
+
+    @Test
+    void addCommand_rejectsTaskWithDuplicateDetails() {
+        TaskList tasks = new TaskList(new TodoTask("read book"));
+
+        ChausistantException error = assertThrows(ChausistantException.class, () ->
+                new AddCommand(new TodoTask("read book")).execute(tasks,
+                        new Ui(new StringBuilder()), new Storage(Path.of("unused.txt"))));
+
+        assertEquals("This task is already in your list.", error.getMessage());
+        assertEquals(1, tasks.size());
     }
 
     @Test
@@ -80,6 +92,25 @@ class CommandTest {
                 + "[T][X] read book" + System.lineSeparator(), markedResponse.toString());
         assertEquals("looking good! here's your task now:" + System.lineSeparator()
                 + "[T][ ] read book" + System.lineSeparator(), unmarkedResponse.toString());
+    }
+
+    @Test
+    void statusCommands_rejectRepeatedStatusChange() throws IOException, ChausistantException {
+        TodoTask task = new TodoTask("read book");
+        TaskList tasks = new TaskList(task);
+        Storage storage = new Storage(temporaryDirectory.resolve("chausistant.txt"));
+
+        new MarkCommand("1").execute(tasks, new Ui(new StringBuilder()), storage);
+        ChausistantException markError = assertThrows(ChausistantException.class, () ->
+                new MarkCommand("1").execute(tasks, new Ui(new StringBuilder()), storage));
+
+        new UnmarkCommand("1").execute(tasks, new Ui(new StringBuilder()), storage);
+        ChausistantException unmarkError = assertThrows(ChausistantException.class, () ->
+                new UnmarkCommand("1").execute(tasks, new Ui(new StringBuilder()), storage));
+
+        assertEquals("This task is already marked as completed.", markError.getMessage());
+        assertEquals("This task is already marked as incomplete.", unmarkError.getMessage());
+        assertFalse(task.isCompleted());
     }
 
     @Test

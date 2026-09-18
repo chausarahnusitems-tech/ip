@@ -181,12 +181,21 @@ class ParserTest {
     }
 
     @Test
-    void parseEventEndingBeforeItStartsThrowsRangeError() {
+    void parseEventEndingAtOrBeforeItsStartThrowsRangeError() {
         ChausistantException error = assertThrows(
                 ChausistantException.class, () -> Parser.parse(
                         "event meeting /from 3/12/2019 /to 2/12/2019"));
 
-        assertEquals("The event end must not be before its start.", error.getMessage());
+        assertEquals("The event end must be after its start.", error.getMessage());
+    }
+
+    @Test
+    void parseEventEndingAtItsStartThrowsRangeError() {
+        ChausistantException error = assertThrows(
+                ChausistantException.class, () -> Parser.parse(
+                        "event meeting /from 2/12/2019 1200 /to 2/12/2019 1200"));
+
+        assertEquals("The event end must be after its start.", error.getMessage());
     }
 
     @Test

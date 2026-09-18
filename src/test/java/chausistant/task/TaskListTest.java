@@ -1,6 +1,8 @@
 package chausistant.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +47,25 @@ class TaskListTest {
         TaskList taskList = new TaskList(new TodoTask("read book"));
 
         assertEquals(List.of(), taskList.findMatchingTasks("receipt"));
+    }
+
+    @Test
+    void hasTaskWithSameDetails_matchesTypeDescriptionAndScheduleButNotCompletionState() {
+        LocalDateTime start = LocalDateTime.of(2026, 6, 1, 10, 0);
+        TodoTask completedTodo = new TodoTask("read book");
+        completedTodo.setCompleted(true);
+        TaskList taskList = new TaskList(completedTodo,
+                new DeadlineTask("return book", start, true),
+                new EventTask("meeting", start, true, start.plusHours(1), true));
+
+        assertTrue(taskList.hasTaskWithSameDetails(new TodoTask("read book")));
+        assertTrue(taskList.hasTaskWithSameDetails(new DeadlineTask("return book", start, true)));
+        assertTrue(taskList.hasTaskWithSameDetails(
+                new EventTask("meeting", start, true, start.plusHours(1), true)));
+        assertFalse(taskList.hasTaskWithSameDetails(new DeadlineTask("return book", start, false)));
+        assertFalse(taskList.hasTaskWithSameDetails(
+                new EventTask("meeting", start, true, start.plusHours(2), true)));
+        assertFalse(taskList.hasTaskWithSameDetails(new TodoTask("read another book")));
     }
 
     @Test
